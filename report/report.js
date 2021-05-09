@@ -1,1 +1,1 @@
-require('../dist/index.js').analyzeReport();
+require('../dist/index.js').report();
