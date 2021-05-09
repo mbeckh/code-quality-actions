@@ -48,7 +48,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v2
       with:
-        name: test
+        name: logs
         path: |
             build/Testing/**/*.log
             build/clang-tidy-*.log
