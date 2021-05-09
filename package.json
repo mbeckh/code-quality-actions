@@ -1,0 +1,33 @@
+{
+  "name": "code-quality-actions",
+  "version": "0.0.1",
+  "description": "GitHub actions for calculating and managing static analysis and code metrics for C++.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "ncc build -m -o dist src/shared.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mbeckh/code-quality-actions.git"
+  },
+  "keywords": [
+    "actions",
+    "build",
+    "coverage"
+  ],
+  "author": "Michael Beckh",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/mbeckh/code-quality-actions/issues"
+  },
+  "homepage": "https://github.com/mbeckh/code-quality-actions#readme",
+  "dependencies": {
+    "@actions/cache": "^1.0.7",
+    "@actions/core": "^1.2.7",
+    "@actions/exec": "^1.0.4",
+    "@actions/github": "^4.0.0"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.28.5"
+  }
+}

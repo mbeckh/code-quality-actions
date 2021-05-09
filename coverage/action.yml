@@ -1,0 +1,23 @@
+name: Coverage Action
+author: Michael Beckh
+description: Get code coverage and optionally send it to codecov.io and codacy.com
+inputs:
+  command:
+    description: The command to run
+    default: ctest --output-on-failure
+  source-dir:
+    description: The CMake source directory (defaults to GITHUB_WORKSPACE)
+    default: .
+  binary-dir:
+    description: The CMake binary directory
+    required: true
+  codecov:
+    description: Set to true to send the results to codecov.io
+  codacy-token:
+    description: Set to the value of the codacy project token to send results to codacy.com
+  github-token:
+    description: The Github token
+    required: true
+runs:
+  using: node12
+  main: ./coverage.js
