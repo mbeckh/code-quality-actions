@@ -185,9 +185,9 @@ exports.coverage = async function() {
     await setupOpenCppCoverage();
 
     const command = core.getInput('command', { 'required': true });
-    const sourcePath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('source-dir', { 'required': false })));
-    const binaryPath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('binary-dir', { 'required': false })));
-    const codecov = [ 'true', 'True', 'TRUE' ].includes(core.getInput('codecov', { 'required': false }));
+    const sourcePath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('source-dir', { 'required': true })));
+    const binaryPath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('binary-dir', { 'required': true })));
+    const codecov = [ 'true', 'True', 'TRUE' ].includes(core.getInput('codecov', { 'required': true }));
     const codacyToken = core.getInput('codacy-token', { 'required': false });
     core.setSecret(codacyToken);
 
@@ -252,7 +252,7 @@ exports.coverage = async function() {
 
 exports.report = async function() {
   try {
-    const mode = core.getInput('mode', { 'required': false });
+    const mode = core.getInput('mode', { 'required': true });
     const codacyToken = core.getInput('codacy-token', { 'required': true });
     core.setSecret(codacyToken);
 
@@ -268,8 +268,8 @@ exports.report = async function() {
     core.startGroup(`Sending ${mode} code analysis to codacy`);
     if (sendResults) {
       // All commands run from source path. Use relative paths for all files because bash cannot handle drive letter in Windows paths.
-      const sourcePath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('source-dir', { 'required': false })));
-      const binaryPath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('binary-dir', { 'required': false })));
+      const sourcePath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('source-dir', { 'required': true })));
+      const binaryPath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('binary-dir', { 'required': true })));
 
       const posixBinaryPath = forcePosix(path.relative(sourcePath, binaryPath));
       const posixToolPath = forcePosix(path.relative(sourcePath, toolPath));
