@@ -1,5 +1,9 @@
 int called_always() {
-	const char sz[] = "Test";
+#if _DEBUG
+	const char sz[] = "Debug";
+#else
+	const char sz[] = "Release";
+#endif
 	return sz[0];
 }
 
@@ -8,7 +12,7 @@ int called_optional() {
 }
 
 int main(int argc, char**) {
-	int result = called_always() == 'T' ? 0 : 1;
+	int result = called_always() == 'Z' ? 1 : 0;
 	if (argc > 1) {
 		result += called_optional();
 	}
