@@ -55,7 +55,6 @@ jobs:
         path: |
             build/Testing/**/*.log
             build/clang-tidy-*.log
-            .mbeckh/clang-tidy.json
 
   final:
     name: Send Completion Message
