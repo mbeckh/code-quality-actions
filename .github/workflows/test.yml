@@ -64,6 +64,9 @@ jobs:
     needs: build
     
     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
     - name: Report
       uses: ./report
       with:
