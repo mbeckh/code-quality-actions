@@ -162,14 +162,14 @@ function parseCommandLine(str) {
 }
 
 // Get checkout root folder to build names relative to repository root
-function getCheckoutPath(path) {
-  let checkoutPath = path;
+function getCheckoutPath(sourcePath) {
+  let checkoutPath = sourcePath;
   while (checkoutPath !== WORKSPACE_PATH && !fs.existsSync(path.join(checkoutPath, '.git'))) {
     let previous = checkoutPath;
     checkoutPath = path.dirname(checkoutPath);
     if (checkoutPath === previous) {
       // abort if - for whatever reason - cannot traverse up
-      throw new Error(`Cannot find repository root for ${path}, currently looking into ${checkoutPath}`);
+      throw new Error(`Cannot find repository root for ${sourcePath}, currently looking into ${checkoutPath}`);
     }
   }
   if (fs.existsSync(path.join(checkoutPath, '.git'))) {
