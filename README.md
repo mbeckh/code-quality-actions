@@ -58,7 +58,7 @@ Example:
 -   `codacy-token` - The value of the Codacy.com project API token to send data to Codacy
     (optional, defaults to not send to Codacy).
 
--   `github-token` - The value of the GitHub API token (required).
+-   `github-token` - The value of the GitHub API token (optional, defaults to current GitHub token).
 
 ## Report clang-tidy Results
 Send [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) results to [Codacy](https://www.codacy.com). The action
@@ -88,7 +88,7 @@ Example:
 
 -   `codacy-token` - The value of the Codacy.com project API token (required).
 
--   `github-token` - The value of the GitHub API token (required).
+-   `github-token` - The value of the GitHub API token (optional, defaults to current GitHub token).
 
 ## License
 The code is released under the Apache License Version 2.0. Please see [LICENSE](LICENSE) for details and

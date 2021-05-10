@@ -6,18 +6,18 @@ inputs:
     description: The command to run (defaults to ctest --output-on-failure)
     default: ctest --output-on-failure
   source-dir:
-    description: The CMake source directory (defaults to GITHUB_WORKSPACE)
+    description: The CMake source directory (defaults to github.workspace)
     default: .
   binary-dir:
-    description: The CMake binary directory (defaults to GITHUB_WORKSPACE)
+    description: The CMake binary directory (defaults to github.workspace)
     default: .
   codecov:
     description: Set to true to send the results to codecov.io (defaults to false)
   codacy-token:
     description: Set to the value of the Codacy project token to send results to codacy.com
   github-token:
-    description: The GitHub token
-    required: true
+    description: The GitHub token (optional, defaults to github.token)
+    default: ${{github.token}}
 runs:
   using: node12
   main: ./coverage.js

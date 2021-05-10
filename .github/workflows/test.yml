@@ -38,7 +38,6 @@ jobs:
         binary-dir: build
         codecov: true
         codacy-token: ${{secrets.CODACY_PROJECT_API_TOKEN}}
-        github-token: ${{secrets.GITHUB_TOKEN}}
 
     - name: Report
       uses: ./report
@@ -47,7 +46,6 @@ jobs:
         source-dir: test
         binary-dir: build
         codacy-token: ${{secrets.CODACY_PROJECT_API_TOKEN}}
-        github-token: ${{secrets.GITHUB_TOKEN}}
 
     - name: Save Logs
       if: always()
@@ -72,4 +70,3 @@ jobs:
       with:
         mode: final
         codacy-token: ${{secrets.CODACY_PROJECT_API_TOKEN}}
-        github-token: ${{secrets.GITHUB_TOKEN}}

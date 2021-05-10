@@ -6,17 +6,17 @@ inputs:
     description: Selects the steps to run ('full', 'partial' or 'final', defaults to 'full')
     default: full
   source-dir:
-    description: The CMake source directory (defaults to GITHUB_WORKSPACE, not used for mode 'final')
+    description: The CMake source directory (defaults to github.workspace)
     default: .
   binary-dir:
-    description: The CMake binary directory (defaults to GITHUB_WORKSPACE, not used for mode 'final')
+    description: The CMake binary directory (defaults to github.workspace)
     default: .
   codacy-token:
     description: The value of the Codacy project token
     required: true
   github-token:
-    description: The GitHub token
-    required: true
+    description: The GitHub token (optional, defaults to github.token)
+    default: ${{github.token}}
 runs:
   using: node12
   main: ./report.js
