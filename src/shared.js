@@ -256,25 +256,29 @@ exports.report = async function() {
     const codacyToken = core.getInput('codacy-token', { 'required': true });
     core.setSecret(codacyToken);
 
-    if (mode !== 'full' && mode !== 'partial' && mode !== 'final') {
-      core.setFailed(`Unknown mode '${mode}', available options are 'full', 'partial' and 'final`);
-      return;
+    const sendResults = [ 'full', 'partial' ].includes(mode);
+    const sendCommit = [ 'full', 'final' ].includes(mode);
+
+    if (!sendResults && !sendCommit) {
+      throw new Error(`Unknown mode '${mode}', available options are 'full', 'partial' and 'final`);
     }
 
+    const toolPath = sendResults ? await setupCodacyClangTidy() : null;
+
     core.startGroup(`Sending ${mode} code analysis to codacy`);
-    if (mode === 'full' || mode === 'partial') {
+    if (sendResults) {
       // All commands run from source path. Use relative paths for all files because bash cannot handle drive letter in Windows paths.
       const sourcePath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('source-dir', { 'required': false })));
       const binaryPath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('binary-dir', { 'required': false })));
 
       const posixBinaryPath = forcePosix(path.relative(sourcePath, binaryPath));
-      const posixToolPath = forcePosix(path.relative(sourcePath, await setupCodacyClangTidy()));
+      const posixToolPath = forcePosix(path.relative(sourcePath, toolPath));
       const posixLogFile = forcePosix(path.relative(sourcePath, path.join(TEMP_PATH, 'clang-tidy.json')));
 
       await exec.exec('bash', [ '-c', `find ${posixBinaryPath} -maxdepth 1 -name 'clang-tidy-*.log' -exec cat {} \\; | java -jar ${posixToolPath} | sed -r -e "s#[\\\\]{2}#/#g" > ${posixLogFile}` ], { 'cwd': sourcePath });
       await exec.exec('bash', [ '-c', `curl -s -S -XPOST -L -H "project-token: ${codacyToken}" -H "Content-type: application/json" -w "\\n" -d @${posixLogFile} "https://api.codacy.com/2.0/commit/${env.GITHUB_SHA}/issuesRemoteResults"` ], { 'cwd': sourcePath });
     }
-    if (mode === 'full' || mode === 'final') {
+    if (sendCommit) {
       await exec.exec('bash', [ '-c', `curl -s -S -XPOST -L -H "project-token: ${codacyToken}" -H "Content-type: application/json" -w "\\n" "https://api.codacy.com/2.0/commit/${env.GITHUB_SHA}/resultsFinal"` ]);
     }
     core.endGroup();
