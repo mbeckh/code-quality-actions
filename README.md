@@ -77,8 +77,8 @@ Example:
 
 ### Inputs for `report`
 -   `mode` - Allows sending multiple log files, e.g. from different jobs, before sending the completion message.
-     Use `partial` to send a partial result and `final` for the final commit message. `full` sends a single log file
-     and commits immediately (optional, defaults to `full`).
+    Use `partial` to send a partial result and `final` for the final commit message. `full` sends a single log file
+    and commits immediately (optional, defaults to `full`).
 
 -   `source-dir` - The root source directory such as `CMAKE_SOURCE_DIR`
     (optional, defaults to GitHub workspace directory, not used for mode `final`).
@@ -93,4 +93,3 @@ Example:
 ## License
 The code is released under the Apache License Version 2.0. Please see [LICENSE](LICENSE) for details and
 [NOTICE](NOTICE) for the required information when using llamalog in your own work.
-
