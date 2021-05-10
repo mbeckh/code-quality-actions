@@ -187,7 +187,7 @@ exports.coverage = async function() {
     const command = core.getInput('command', { 'required': true });
     const sourcePath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('source-dir', { 'required': false })));
     const binaryPath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('binary-dir', { 'required': false })));
-    const codecov = core.getBooleanInput('codecov', { 'required': false });
+    const codecov = [ 'true', 'True', 'TRUE' ].includes(core.getInput('codecov', { 'required': false }));
     const codacyToken = core.getInput('codacy-token', { 'required': false });
     core.setSecret(codacyToken);
 
