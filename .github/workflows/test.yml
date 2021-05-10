@@ -31,6 +31,7 @@ jobs:
       run: cmake --build .
 
     - name: Coverage
+      if: matrix.configuration == 'Debug'
       uses: ./coverage
       with:
         source-dir: test
