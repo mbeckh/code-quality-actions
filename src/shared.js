@@ -63,7 +63,7 @@ async function restoreCache(paths, key, altKeys) {
 
 async function setupOpenCppCoverage() {
   const toolPath = path.join(TEMP_PATH, 'OpenCppCoverage');
-  
+
   core.startGroup('Installing OpenCppCoverage');
   // Install "by hand" because running choco on github is incredibly slow
   core.info('Getting latest release for OpenCppCoverage');
@@ -84,7 +84,7 @@ async function setupOpenCppCoverage() {
       const { data: release } = await octokit.repos.getLatestRelease({ 'owner':'dscharrer', 'repo': 'innoextract' });
       const asset = release.assets.filter((e) => /-windows\.zip$/.test(e.name))[0];
       core.info(`Downloading ${release.name} from ${asset.browser_download_url}`);
-      
+
       const downloadFile = path.join(TEMP_PATH, asset.name);
       await exec.exec('curl', [ '-s', '-S', '-L', `-o${downloadFile}`, '--create-dirs', asset.browser_download_url ]);
       core.info('Unpacking innoextract');
@@ -121,7 +121,7 @@ async function setupCodacyClangTidy() {
   const asset = release.assets.filter((e) => /\.jar$/.test(e.name))[0];
   const key = `codacy-clang-tidy-${asset.id}`;
   const toolFile = path.join(toolPath, asset.name);
-  
+
   if (await restoreCache([ toolPath ], key)) {
     core.info(`Found codacy-clang-tidy ${release.tag_name} in cache at ${toolPath}`);
   } else {
@@ -143,14 +143,14 @@ async function setupCodacyCoverageScript() {
   const hash = crypto.createHash('sha256');
   hash.update(file);
   const hex = hash.digest('hex');
-        
+
   const cacheKey = `codacy-coverage-${hex}`;
   const cacheId = await restoreCache([ path.join(TEMP_PATH, '.codacy-coverage') ], cacheKey, [ 'codacy-coverage-' ]);
   if (cacheId) {
     core.info('.codacy-coverage is found in cache');
   }
   core.endGroup();
-  
+
   return { 'cache': { 'id': cacheId, 'key': cacheKey }, 'script': script };
 }
 
@@ -161,39 +161,42 @@ function parseCommandLine(str) {
   return [...str.matchAll(regex)].map((e) => e[1]);
 }
 
+// Get checkout root folder to build names relative to repository root
+function getCheckoutPath(path) {
+  let checkoutPath = path;
+  while (checkoutPath !== WORKSPACE_PATH && !fs.existsSync(path.join(checkoutPath, '.git'))) {
+    let previous = checkoutPath;
+    checkoutPath = path.dirname(checkoutPath);
+    if (checkoutPath === previous) {
+      // abort if - for whatever reason - cannot traverse up
+      throw new Error(`Cannot find repository root for ${path}, currently looking into ${checkoutPath}`);
+    }
+  }
+  if (fs.existsSync(path.join(checkoutPath, '.git'))) {
+    core.info(`Found Git repository at ${checkoutPath}`);
+  } else {
+    core.info(`Assume repository root as ${checkoutPath}`);
+  }
+  return checkoutPath;
+}
+
 exports.coverage = async function() {
   try {
     await setupOpenCppCoverage();
 
     const command = core.getInput('command', { 'required': true });
-    const sourcePath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('source-dir', { 'required': true })));
-    const binaryPath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('binary-dir', { 'required': true })));
-    const codecov = core.getInput('codecov', { 'required': false })? true : false;
+    const sourcePath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('source-dir', { 'required': false })));
+    const binaryPath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('binary-dir', { 'required': false })));
+    const codecov = core.getBooleanInput('codecov', { 'required': false });
     const codacyToken = core.getInput('codacy-token', { 'required': false });
     core.setSecret(codacyToken);
 
-    // Get checkout root folder to build names relative to repository root
-    let checkoutPath = sourcePath;
-    while (checkoutPath != WORKSPACE_PATH && !fs.existsSync(path.join(checkoutPath, '.git'))) {
-      let previous = checkoutPath;
-      checkoutPath = path.dirname(checkoutPath);
-      if (checkoutPath == previous) {
-        // abort if - for whatever reason - cannot traverse up
-        core.setFailed(`Cannot find repository root for ${sourcePath}, currently looking into ${checkoutPath}`);
-        return;
-      }
-    }
-    if (fs.existsSync(path.join(checkoutPath, '.git'))) {
-      core.info(`Found Git repository at ${checkoutPath}`);
-    } else {
-      core.info(`Assume repository root as ${checkoutPath}`);
-    }
-
+    const checkoutPath = getCheckoutPath(sourcePath);
     const codacy = codacyToken ? await setupCodacyCoverageScript() : null;
 
     core.startGroup(`Getting code coverage for ${command}`);
 
-    const coverageFile = path.join(binaryPath, `${github.context.repo.repo}.xml`);
+    const coverageFile = path.join(binaryPath, `coverage-${github.context.repo.repo}.xml`);
     const commandArray = parseCommandLine(command);
 
     await exec.exec('OpenCppCoverage', [
@@ -205,12 +208,12 @@ exports.coverage = async function() {
                     '--cover_children',
                     `--export_type=cobertura:${coverageFile}`,
                     '--', ...commandArray ], { 'cwd': binaryPath });
-      
+
     // beautify file
     let data = fs.readFileSync(coverageFile, 'utf8');
     const root = /(?<=<source>).+?(?=<\/source>)/.exec(data)[0];
     const workspaceWithoutRoot = checkoutPath.substring(root.length).replace(/^[\\\/]/, ''); // remove Windows volume name and leading (back-) slashes
-    
+
     data = data.replace(/(?<=<source>).+?(?=<\/source>)/, checkoutPath);
     data = data.replace(new RegExp(`(?<= name=")${escapeRegExp(path.join(binaryPath, path.sep))}`, 'g'), '');
     data = data.replace(new RegExp(`(?<= filename=")${escapeRegExp(path.join(workspaceWithoutRoot, path.sep))}`, 'g'), '');
@@ -226,7 +229,7 @@ exports.coverage = async function() {
       await exec.exec('bash', [ '-c', `bash <(curl -sS https://codecov.io/bash) -Z -f "${posixCoverageFile}"` ], { 'cwd': checkoutPath });
       core.endGroup();
     }
-    
+
     if (codacy) {
       core.startGroup('Sending coverage to codacy');
       // use relative posix paths for bash
@@ -249,20 +252,31 @@ exports.coverage = async function() {
 
 exports.report = async function() {
   try {
-    // All commands run from source path. Use relative paths for all files because bash cannot handle drive letter in Windows paths.
-    const sourcePath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('source-dir', { 'required': true })));
-    const binaryPath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('binary-dir', { 'required': true })));
+    const mode = core.getInput('mode', { 'required': false });
     const codacyToken = core.getInput('codacy-token', { 'required': true });
     core.setSecret(codacyToken);
 
-    const posixBinaryPath = forcePosix(path.relative(sourcePath, binaryPath));
-    const posixToolPath = forcePosix(path.relative(sourcePath, await setupCodacyClangTidy()));
-    const posixLogFile = forcePosix(path.relative(sourcePath, path.join(TEMP_PATH, 'clang-tidy.json')));
+    if (mode !== 'full' && mode !== 'partial' && mode !== 'final') {
+      core.setFailed(`Unknown mode '${mode}', available options are 'full', 'partial' and 'final`);
+      return;
+    }
 
-    core.startGroup('Sending code analysis to codacy');
-    await exec.exec('bash', [ '-c', `find ${posixBinaryPath} -maxdepth 1 -name 'clang-tidy-*.log' -exec cat {} \\; | java -jar ${posixToolPath} | sed -r -e "s#[\\\\]{2}#/#g" > ${posixLogFile}` ], { 'cwd': sourcePath });
-    await exec.exec('bash', [ '-c', `curl -s -S -XPOST -L -H "project-token: ${codacyToken}" -H "Content-type: application/json" -w "\\n" -d @${posixLogFile} "https://api.codacy.com/2.0/commit/${env.GITHUB_SHA}/issuesRemoteResults"` ], { 'cwd': sourcePath });
-    await exec.exec('bash', [ '-c', `curl -s -S -XPOST -L -H "project-token: ${codacyToken}" -H "Content-type: application/json" -w "\\n" "https://api.codacy.com/2.0/commit/${env.GITHUB_SHA}/resultsFinal"` ], { 'cwd': sourcePath });
+    core.startGroup(`Sending ${mode} code analysis to codacy`);
+    if (mode === 'full' || mode === 'partial') {
+      // All commands run from source path. Use relative paths for all files because bash cannot handle drive letter in Windows paths.
+      const sourcePath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('source-dir', { 'required': false })));
+      const binaryPath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('binary-dir', { 'required': false })));
+
+      const posixBinaryPath = forcePosix(path.relative(sourcePath, binaryPath));
+      const posixToolPath = forcePosix(path.relative(sourcePath, await setupCodacyClangTidy()));
+      const posixLogFile = forcePosix(path.relative(sourcePath, path.join(TEMP_PATH, 'clang-tidy.json')));
+
+      await exec.exec('bash', [ '-c', `find ${posixBinaryPath} -maxdepth 1 -name 'clang-tidy-*.log' -exec cat {} \\; | java -jar ${posixToolPath} | sed -r -e "s#[\\\\]{2}#/#g" > ${posixLogFile}` ], { 'cwd': sourcePath });
+      await exec.exec('bash', [ '-c', `curl -s -S -XPOST -L -H "project-token: ${codacyToken}" -H "Content-type: application/json" -w "\\n" -d @${posixLogFile} "https://api.codacy.com/2.0/commit/${env.GITHUB_SHA}/issuesRemoteResults"` ], { 'cwd': sourcePath });
+    }
+    if (mode === 'full' || mode === 'final') {
+      await exec.exec('bash', [ '-c', `curl -s -S -XPOST -L -H "project-token: ${codacyToken}" -H "Content-type: application/json" -w "\\n" "https://api.codacy.com/2.0/commit/${env.GITHUB_SHA}/resultsFinal"` ]);
+    }
     core.endGroup();
   } catch (error) {
     core.setFailed(error.message);

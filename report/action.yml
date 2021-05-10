@@ -1,18 +1,21 @@
 name: Report to Codacy Action
 author: Michael Beckh
-description: Report clang-tidy analysis results to codacy.com
+description: Report clang-tidy analysis results to codacy.com.
 inputs:
+  mode:
+    description: Selects the steps to run ('full', 'partial' or 'final', defaults to 'full')
+    default: full
   source-dir:
-    description: The CMake source directory (defaults to GITHUB_WORKSPACE)
+    description: The CMake source directory (defaults to GITHUB_WORKSPACE, not used for mode 'final')
     default: .
   binary-dir:
-    description: The CMake binary directory
-    required: true
+    description: The CMake binary directory (defaults to GITHUB_WORKSPACE, not used for mode 'final')
+    default: .
   codacy-token:
-    description: The value of the codacy project token
+    description: The value of the Codacy project token
     required: true
   github-token:
-    description: The Github token
+    description: The GitHub token
     required: true
 runs:
   using: node12

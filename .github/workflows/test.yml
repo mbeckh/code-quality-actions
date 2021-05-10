@@ -1,4 +1,4 @@
-name: build
+name: test
 
 on:
   push:
@@ -8,19 +8,22 @@ on:
 
 jobs:
   build:
-    name: Build and Test
+    name: Get Coverage and Perform Static Analysis
     runs-on: windows-latest
+    strategy:
+      matrix:
+        configuration: [ Debug, Release ]
 
     steps:
     - name: Checkout
       uses: actions/checkout@v2
 
     - name: Setup MSVC Environment
-      uses: ilammy/msvc-dev-cmd@dd5e2fa0a7de1e7929605d9ecc020e749d9856a3
+      uses:  mbeckh/msvc-dev-cmd@master
 
     - name: Configure
       shell: cmd
-      run: cmake -DCMAKE_BUILD_TYPE=Debug -G Ninja -S test -B build
+      run: cmake -DCMAKE_BUILD_TYPE=${{matrix.configuration}} -G Ninja -S test -B build
 
     - name: Build
       shell: cmd
@@ -39,6 +42,7 @@ jobs:
     - name: Report
       uses: ./report
       with:
+        mode: partial
         source-dir: test
         binary-dir: build
         codacy-token: ${{secrets.CODACY_PROJECT_API_TOKEN}}
@@ -52,3 +56,16 @@ jobs:
         path: |
             build/Testing/**/*.log
             build/clang-tidy-*.log
+
+  final:
+    name: Send Completion Message
+    runs-on: windows-latest
+    needs: build
+    
+    steps:
+    - name: Report
+      uses: ./report
+      with:
+        mode: final
+        codacy-token: ${{secrets.CODACY_PROJECT_API_TOKEN}}
+        github-token: ${{secrets.GITHUB_TOKEN}}
