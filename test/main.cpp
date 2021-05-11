@@ -1,3 +1,9 @@
+//
+// Test Object which contains:
+// - Two errors to be found by clang-tidy.
+// - Test coverage for all lines except the ones marked with 'no coverage'.
+//
+
 int called_always() {
 #ifdef _DEBUG
 	const char sz[] = "Debug";   // testing: deliberate error for clang-tidy
