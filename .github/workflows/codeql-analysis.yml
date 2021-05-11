@@ -5,6 +5,9 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
   schedule:
     - cron: '21 8 * * 1'
 
@@ -22,13 +25,19 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Initialize CodeQL
+      if: github.event_name != pull_request
       uses: github/codeql-action/init@v1
       with:
         languages: javascript
         config-file: ./.github/codeql/codeql-config.yml
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v1
+    - name: Initialize CodeQL for Pull Request
+      if: github.event_name == pull_request
+      uses: github/codeql-action/init@v1
+      with:
+        languages: javascript
+        config-file: ./.github/codeql/codeql-config.yml
+        queries: code-scanning
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
