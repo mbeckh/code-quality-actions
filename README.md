@@ -20,8 +20,8 @@ The actions are tested on Windows runners only.
 
 ## Get Coverage
 Run a coverage analysis on a custom command and store the report in `coverage-<repository name>.xml` in the binary
-directory. Code in the folder `test/` in the source directory and modules in `vcpkg_installed/` in the binary directory
-are excluded automatically.
+directory. Code in the folder `test/` in `<sourece-dir>`, the folder `<binary-dir>` and modules in `vcpkg_installed/` 
+in the binary directory are excluded automatically.
 
 For the time being, all coverage reports are sent for the language `CPP` to Codacy because else the service either
 ignores headers or source files. If required, an enhancement can be made to allow configuration for language argument.
