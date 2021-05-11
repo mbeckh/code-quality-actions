@@ -30,6 +30,7 @@ jobs:
       with:
         languages: javascript
         config-file: ./.github/codeql/codeql-config.yml
+        queries: security-and-quality
 
     - name: Initialize CodeQL for Pull Request
       if: github.event_name == 'pull_request'
@@ -37,7 +38,6 @@ jobs:
       with:
         languages: javascript
         config-file: ./.github/codeql/codeql-config.yml
-        queries: code-scanning
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
