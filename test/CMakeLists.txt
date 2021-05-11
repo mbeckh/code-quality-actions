@@ -14,7 +14,7 @@ add_custom_target(clang-tidy ALL
 add_custom_command(OUTPUT clang-tidy-${PROJECT_NAME}.log
                    COMMAND "${clang-tidy_EXE}"
                            -checks=-*,clang-analyzer-*,clang-diagnostic-*,modernize-avoid-c-arrays
-                           "${CMAKE_SOURCE_DIR}/main.cpp" --
+                           "${CMAKE_SOURCE_DIR}/main.cpp" -- "$<$<CONFIG:Debug>:-D_DEBUG=1>"
                            > clang-tidy-${PROJECT_NAME}.log
                    DEPENDS "${CMAKE_SOURCE_DIR}/main.cpp")
 
