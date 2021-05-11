@@ -1,5 +1,5 @@
 int called_always() {
-#if _DEBUG
+#ifdef _DEBUG
 	const char sz[] = "Debug";
 #else
 	const char sz[] = "Release";
