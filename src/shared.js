@@ -204,10 +204,11 @@ exports.coverage = async function() {
                     `--excluded_modules=${path.join(binaryPath, 'vcpkg_installed', path.sep)}`,
                     `--sources=${path.join(sourcePath, path.sep)}`,
                     `--excluded_sources=${path.join(sourcePath, 'test', path.sep)}`,
+                    sourcePath !== binaryPath ? `--excluded_sources=${path.join(binaryPath, path.sep)}` : null,
                     `--working_dir=${binaryPath}`,
                     '--cover_children',
                     `--export_type=cobertura:${coverageFile}`,
-                    '--', ...commandArray ], { 'cwd': binaryPath });
+                    '--', ...commandArray ].filter((e) => e !== null), { 'cwd': binaryPath });
 
     // beautify file
     let data = fs.readFileSync(coverageFile, 'utf8');
