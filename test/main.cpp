@@ -1,8 +1,8 @@
 int called_always() {
 #ifdef _DEBUG
-	const char sz[] = "Debug";
+	const char sz[] = "Debug";   // deliberate error for testing clang-tidy
 #else
-	const char sz[] = "Release";
+	const char sz[] = "Release"; // deliberate error for testing clang-tidy
 #endif
 	return sz[0];
 }
