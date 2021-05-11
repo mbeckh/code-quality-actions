@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
 
 project("code-quality-actions-test" CXX)
 
+add_compile_definitions("$<$<CONFIG:Debug>:_DEBUG=1>")
 add_executable(${PROJECT_NAME} main.cpp)
 
 find_program(clang-tidy_EXE clang-tidy REQUIRED)
