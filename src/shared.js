@@ -72,7 +72,7 @@ async function setupOpenCppCoverage() {
   core.setSecret(githubToken);
 
   const octokit = github.getOctokit(githubToken);
-  const { data: release } = await octokit.repos.getLatestRelease({ 'owner':'OpenCppCoverage', 'repo': 'OpenCppCoverage' });
+  const { data: release } = await octokit.rest.repos.getLatestRelease({ 'owner':'OpenCppCoverage', 'repo': 'OpenCppCoverage' });
   const asset = release.assets.filter((e) => /-x64-.*\.exe$/.test(e.name))[0];
   const key = `opencppcoverage-${asset.id}`;
 
@@ -81,7 +81,7 @@ async function setupOpenCppCoverage() {
   } else {
     {
       core.info('Getting latest release for innoextract');
-      const { data: release } = await octokit.repos.getLatestRelease({ 'owner':'dscharrer', 'repo': 'innoextract' });
+      const { data: release } = await octokit.rest.repos.getLatestRelease({ 'owner':'dscharrer', 'repo': 'innoextract' });
       const asset = release.assets.filter((e) => /-windows\.zip$/.test(e.name))[0];
       core.info(`Downloading ${release.name} from ${asset.browser_download_url}`);
 
@@ -117,7 +117,7 @@ async function setupCodacyClangTidy() {
   core.setSecret(githubToken);
 
   const octokit = github.getOctokit(githubToken);
-  const { data: release } = await octokit.repos.getLatestRelease({ 'owner':'codacy', 'repo': 'codacy-clang-tidy' });
+  const { data: release } = await octokit.rest.repos.getLatestRelease({ 'owner':'codacy', 'repo': 'codacy-clang-tidy' });
   const asset = release.assets.filter((e) => /\.jar$/.test(e.name))[0];
   const key = `codacy-clang-tidy-${asset.id}`;
   const toolFile = path.join(toolPath, asset.name);
