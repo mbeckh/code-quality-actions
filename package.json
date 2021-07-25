@@ -30,4 +30,4 @@
   "devDependencies": {
     "@vercel/ncc": "^0.28.6"
   }
-} 
+}
