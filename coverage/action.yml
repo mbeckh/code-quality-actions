@@ -11,8 +11,6 @@ inputs:
   binary-dir:
     description: The CMake binary directory (defaults to github.workspace)
     default: .
-  codecov:
-    description: Set to true to send the results to codecov.io (defaults to false)
   codacy-token:
     description: Set to the value of the Codacy project token to send results to codacy.com
   github-token:
