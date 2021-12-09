@@ -36,7 +36,6 @@ jobs:
       with:
         source-dir: test
         binary-dir: build
-        codecov: true
         codacy-token: ${{secrets.CODACY_PROJECT_API_TOKEN}}
 
     - name: Codecov
@@ -45,7 +44,6 @@ jobs:
       with:
         files: build/coverage-*.xml
         fail_ci_if_error: true
-        root_dir: test
         verbose: true
 
     - name: Report
