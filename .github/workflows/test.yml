@@ -30,15 +30,6 @@ jobs:
       working-directory: build
       run: cmake --build .
 
-    - name: codecov
-      if: matrix.configuration == 'Debug'
-      uses: codecov/codecov-action@v2
-      with:
-        files: build/coverage-*.xml
-        fail_ci_if_error: true
-        root_dir: test
-        verbose: true
-
     - name: Coverage
       if: matrix.configuration == 'Debug'
       uses: ./coverage
@@ -47,6 +38,15 @@ jobs:
         binary-dir: build
         codecov: true
         codacy-token: ${{secrets.CODACY_PROJECT_API_TOKEN}}
+
+    - name: Codecov
+      if: matrix.configuration == 'Debug'
+      uses: codecov/codecov-action@v2
+      with:
+        files: build/coverage-*.xml
+        fail_ci_if_error: true
+        root_dir: test
+        verbose: true
 
     - name: Report
       uses: ./report
