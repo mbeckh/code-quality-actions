@@ -7,7 +7,7 @@ GitHub actions for calculating and managing static analysis and code metrics for
 
 ## Features
 -   Run an executable with [OpenCppCoverage](https://github.com/OpenCppCoverage).
--   Optionally send code coverage data to [Codecov](https://about.codecov.io) and [Codacy](https://www.codacy.com).
+-   Send code coverage data to [Codacy](https://www.codacy.com) and prepare coverage data for [Codecov](https://about.codecov.io).
 -   Send [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) reports to [Codacy](https://www.codacy.com).
 
 Sample results for this project's test project:
@@ -38,10 +38,13 @@ Example:
         command: ctest
         source-dir: my-project
         binary-dir: build
-        codecov: true
         codacy-token: ${{secrets.CODACY_PROJECT_API_TOKEN}}
         github-token: ${{secrets.GITHUB_TOKEN}}
 ~~~
+
+Please use [codecov/codecov-action](https://github.com/codecov/codecov-action) for sending coverage data to
+[Codecov](https://about.codecov.io). The [test workflow](.github/workflows/test.yml) in this repository can be used
+as a starting point.
 
 ### Inputs for `coverage`
 -   `command` - The command to run (optional, defaults to `ctest --output-on-failure`).
@@ -51,9 +54,6 @@ Example:
 
 -   `binary-dir` - The root binary directory such as `CMAKE_BINARY_DIR`
     (optional, defaults to GitHub workspace directory).
-
--   `codecov` - Set to `true` to send coverage data to [Codecov](https://about.codecov.io)
-    (optional, defaults to `false`).
 
 -   `codacy-token` - The value of the Codacy.com project API token to send data to Codacy
     (optional, defaults to not send to Codacy).
@@ -91,5 +91,4 @@ Example:
 -   `github-token` - The value of the GitHub API token (optional, defaults to current GitHub token).
 
 ## License
-The code is released under the Apache License Version 2.0. Please see [LICENSE](LICENSE) for details and
-[NOTICE](NOTICE) for the required information when using llamalog in your own work.
+The code is released under the Apache License Version 2.0. Please see [LICENSE](LICENSE) for details.

@@ -187,7 +187,6 @@ exports.coverage = async function() {
     const command = core.getInput('command', { 'required': true });
     const sourcePath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('source-dir', { 'required': true })));
     const binaryPath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('binary-dir', { 'required': true })));
-    const codecov = [ 'true', 'True', 'TRUE' ].includes(core.getInput('codecov', { 'required': true }));
     const codacyToken = core.getInput('codacy-token', { 'required': false });
     core.setSecret(codacyToken);
 
@@ -222,14 +221,6 @@ exports.coverage = async function() {
     fs.writeFileSync(coverageFile, data);
 
     core.endGroup();
-
-    if (codecov) {
-      core.startGroup('Sending coverage to codecov');
-      // use relative posix paths for bash
-      const posixCoverageFile = forcePosix(path.relative(checkoutPath, coverageFile));
-      await exec.exec('bash', [ '-c', `bash <(curl -sS https://codecov.io/bash) -Z -f "${posixCoverageFile}"` ], { 'cwd': checkoutPath });
-      core.endGroup();
-    }
 
     if (codacy) {
       core.startGroup('Sending coverage to codacy');
