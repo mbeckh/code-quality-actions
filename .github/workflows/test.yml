@@ -36,6 +36,7 @@ jobs:
       with:
         source-dir: test
         binary-dir: build
+        codecov: false
         codacy-token: ${{secrets.CODACY_PROJECT_API_TOKEN}}
 
     - name: Codecov
@@ -52,7 +53,6 @@ jobs:
         mode: partial
         source-dir: test
         binary-dir: build
-        codecov: false
         codacy-token: ${{secrets.CODACY_PROJECT_API_TOKEN}}
 
     - name: Save Logs
