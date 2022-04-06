@@ -40,7 +40,7 @@ jobs:
 
     - name: Codecov
       if: matrix.configuration == 'Debug'
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v3
       with:
         files: build/coverage-*.xml
         fail_ci_if_error: true
