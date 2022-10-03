@@ -23,9 +23,11 @@
   "homepage": "https://github.com/mbeckh/code-quality-actions#readme",
   "dependencies": {
     "@actions/cache": "^1.0.8",
+<<<<<<< HEAD
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.1",
-    "@actions/github": "^5.0.0"
+    "@actions/github": "^5.1.1"
+>>>>>>> d29606e (Bump @actions/github from 5.0.0 to 5.1.1)
   },
   "devDependencies": {
     "@vercel/ncc": "^0.34.0"
