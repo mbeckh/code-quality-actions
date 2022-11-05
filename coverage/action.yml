@@ -17,5 +17,5 @@ inputs:
     description: The GitHub token (optional, defaults to github.token)
     default: ${{github.token}}
 runs:
-  using: node12
+  using: node16
   main: ./coverage.js
