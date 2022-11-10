@@ -33,7 +33,7 @@ from Github. For unpacking the installer, the action uses the latest version of
 Example:
 ~~~yml
     - name: Coverage
-      uses: mbeckh/code-quality-actions/coverage@master
+      uses: mbeckh/code-quality-actions/coverage@v1
       with:
         command: ctest
         source-dir: my-project
@@ -67,7 +67,7 @@ expects to find one or several files named `clang-tidy-*.log` in the binary dire
 Example:
 ~~~yml
     - name: Report
-      uses: mbeckh/code-quality-actions/report@master
+      uses: mbeckh/code-quality-actions/report@v1
       with:
         source-dir: my-project
         binary-dir: build
