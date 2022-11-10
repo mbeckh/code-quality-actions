@@ -1,7 +1,7 @@
 # code-quality-actions
 GitHub actions for calculating and managing static analysis and code metrics for C++.
 
-[![Release](https://img.shields.io/github/v/tag/mbeckh/code-quality-actions?label=Release&style=flat-square)](https://github.com/mbeckh/code-quality-actions/releases/)
+[![Release](https://img.shields.io/github/v/release/mbeckh/code-quality-actions?display_name=tag&sort=semver&label=Release&style=flat-square)](https://github.com/mbeckh/code-quality-actions/releases/)
 [![Tests](https://img.shields.io/github/workflow/status/mbeckh/code-quality-actions/test/master?label=Tests&logo=GitHub&style=flat-square)](https://github.com/mbeckh/code-quality-actions/actions)
 [![License](https://img.shields.io/github/license/mbeckh/code-quality-actions?label=License&style=flat-square)](https://github.com/mbeckh/code-quality-actions/blob/master/LICENSE)
 
