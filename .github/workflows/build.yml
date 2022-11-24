@@ -26,7 +26,10 @@ jobs:
     - name: Buld dist/index.js
       run: npm run build
     
-    - name: Commit
+    - name: Commit and Push
       run: |
+        git config user.name "mbeckh"
+        git config user.email "8502359+mbeckh@users.noreply.github.com"
         git add dist/index.js
         git commit -S -m "Build dist/index.js"
+        git push
