@@ -1,10 +1,24 @@
-name: test
+name: Test
 
 on:
   push:
     branches: [ master, 'feature**' ]
+    paths:
+      - '.github/workflows/test.yml'
+      - 'coverage/**'
+      - 'dist/**'
+      - 'report/**'
+      - 'test/**'
+      - 'package*'
   pull_request:
     branches: [ master ]
+    paths:
+      - '.github/workflows/test.yml'
+      - 'coverage/**'
+      - 'dist/**'
+      - 'report/**'
+      - 'test/**'
+      - 'package*'
 
 jobs:
   build:
@@ -16,7 +30,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3.1.0
+      uses: actions/checkout@v3
 
     - name: Setup MSVC Environment
       uses:  mbeckh/msvc-dev-cmd@v1
@@ -69,7 +83,7 @@ jobs:
     
     steps:
     - name: Checkout
-      uses: actions/checkout@v3.1.0
+      uses: actions/checkout@v3
 
     - name: Report
       uses: ./report
