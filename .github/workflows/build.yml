@@ -1,0 +1,31 @@
+name: Build
+
+on:
+  push:
+    paths:
+      - 'package*'
+      - 'src/**'
+
+jobs:
+  build:
+    name: Build dist/index.js
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js 16.x
+      uses: actions/setup-node@v3
+      with:
+          node-version: 16.x
+    - name: Install Modules      
+      run: npm ci
+    
+    - name: Buld dist/index.js
+      run: npm run build
+    
+    - name: Commit
+      run: |
+        git add dist/index.js
+        git commit -S -m "Build dist/index.js"
