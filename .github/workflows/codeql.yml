@@ -3,11 +3,20 @@ name: CodeQL
 on:
   push:
     branches: [ master ]
+    paths:
+      - '.github/workflows/codeql.yml'
+      - '.github/codeql/**'
+      - 'coverage/**'
+      - 'report/**'
+      - 'src/**'
   pull_request:
     branches: [ master ]
     paths-ignore:
-      - '**/*.md'
-      - '**/*.txt'
+      - '.github/workflows/codeql.yml'
+      - '.github/codeql/**'
+      - 'coverage/**'
+      - 'report/**'
+      - 'src/**'
   schedule:
     - cron: '21 8 * * 1'
 
@@ -22,7 +31,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3.1.0
+      uses: actions/checkout@v3
 
     - name: Initialize CodeQL
       if: github.event_name != 'pull_request'
