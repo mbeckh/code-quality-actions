@@ -10,38 +10,31 @@ on:
 jobs:
   build:
     name: Build dist/index.js
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-      with:
-        fetch-depth: 2
-
-    - name: Check dist/index.js
-      id: check
-      shell: pwsh
-      run: |
-        $diff = git diff --name-only HEAD^ HEAD
-        $SourceDiff = $diff | Where-Object { $_ -match '^dist/index.js$' }
-        $HasDiff = $SourceDiff.Length -gt 0
-        echo "changed=$HasDiff" | Out-File -FilePath $Env:GITHUB_OUTPUT -Encoding utf8 -Append
     
     - name: Setup Node.js 16.x
-      if: steps.check.outputs.changed != 'True'
       uses: actions/setup-node@v3
       with:
           node-version: 16.x
     
     - name: Install Modules
-      if: steps.check.outputs.changed != 'True'
       run: npm ci
     
     - name: Buld dist/index.js
-      if: steps.check.outputs.changed != 'True'
       run: npm run build
     
+    - name: Check if Changed
+      id: check
+      shell: bash
+      run: |
+        git diff --quiet -- dist/index.js
+        echo "changed=$?" >> $GITHUB_OUTPUT
+
     - name: Commit and Push
-      if: steps.check.outputs.changed != 'True'
+      if: steps.check.outputs.changed == 1
       run: |
         git config user.name "mbeckh"
         git config user.email "8502359+mbeckh@users.noreply.github.com"
