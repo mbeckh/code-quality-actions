@@ -6,7 +6,7 @@ on:
       - '.github/workflows/build.yml'
       - 'src/**'
       - 'package*'
-  workflow_dispatch:
+  workflow_call:
 
 concurrency: 
   group: ${{ github.workflow }}-${{ github.ref }}
