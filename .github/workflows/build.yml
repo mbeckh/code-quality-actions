@@ -35,14 +35,14 @@ jobs:
       id: check
       shell: bash
       run: |
-        git diff --quiet -- dist/index.js
+        git status --porcelain=v1 -- dist/ | wc -l
         echo "changed=$?" >> $GITHUB_OUTPUT
 
     - name: Commit and Push
-      if: steps.check.outputs.changed == 1
+      if: steps.check.outputs.changed > 0
       run: |
         git config user.name "mbeckh"
         git config user.email "8502359+mbeckh@users.noreply.github.com"
-        git add dist/index.js
-        git commit -S -m "Build dist/index.js"
+        git add dist/
+        git commit -S -m "Compiled source"
         git push
