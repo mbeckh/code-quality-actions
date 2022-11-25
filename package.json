@@ -4,7 +4,7 @@
   "description": "GitHub actions for calculating and managing static analysis and code metrics for C++.",
   "main": "dist/index.js",
   "scripts": {
-    "build": "ncc build -m -o dist src/shared.js"
+    "build": "ncc build src/shared.js -m -o dist --license licenses.txt"
   },
   "repository": {
     "type": "git",
