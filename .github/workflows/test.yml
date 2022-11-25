@@ -41,10 +41,13 @@ jobs:
       id: check
       shell: bash
       run: |
+        set +e
         count=`git diff --name-only HEAD^ HEAD | grep -E "(^package.*)|(^src/)" | wc -l`
+        set -e
         echo "changed=$count" >> $GITHUB_OUTPUT
       
   build:
+    name: Build
     needs: check
     if: needs.check.outputs.changed > 0
     uses: ./.github/workflows/build.yml
