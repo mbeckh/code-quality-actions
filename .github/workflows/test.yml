@@ -4,24 +4,49 @@ on:
   push:
     branches: [ master, 'feature**' ]
     paths:
+      - '.github/workflows/build.yml'
       - '.github/workflows/test.yml'
-      - 'coverage/**'
+     - 'coverage/**'
       - 'dist/**'
       - 'report/**'
+      - 'src/**'
       - 'test/**'
       - 'package*'
   pull_request:
     branches: [ master ]
     paths:
+      - '.github/workflows/build.yml'
       - '.github/workflows/test.yml'
       - 'coverage/**'
       - 'dist/**'
       - 'report/**'
+      - 'src/**'
       - 'test/**'
       - 'package*'
 
 jobs:
+  check:
+    name: Build Required?
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{steps.check.outputs.changed}}
+    
+    steps:
+    - name: Check Changes
+      id: check
+      shell: bash
+      run: |
+        count=`git diff --name-only HEAD^ HEAD | grep -E "(^package.*)|(^src/)" | wc -l`
+        echo "changed=$count" >> $GITHUB_OUTPUT
+      
   build:
+    needs: check
+    if: needs.check.outputs.changed > 0
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    
+  test:
+    needs: build
     name: Get Coverage and Perform Static Analysis
     runs-on: windows-latest
     strategy:
