@@ -72,14 +72,18 @@ jobs:
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       run: |
+        echo Step1
         sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/licenses.txt)
         if [ $? -eq 0 ]; then
           sha_clause="--field sha=\"$sha\""
         fi
+        echo Step2
         content=$(base64 -i dist/index.js)
+        echo Step3
         gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/licenses.txt \
           --field message="Update dist/licenses.txt" \
           --field content="$content" \
           --field encoding="base64" \
           --field branch="${{github.head_ref || github.ref_name}}" \
           $sha_clause
+        echo Step4
