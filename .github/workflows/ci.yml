@@ -1,0 +1,4 @@
+name: CI
+# check build required, if so, launch build
+# test workflow runs on build complete
+# if build not required, call workflow test directly
