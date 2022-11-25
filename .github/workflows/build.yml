@@ -35,8 +35,8 @@ jobs:
       id: check
       shell: bash
       run: |
-        git status --porcelain=v1 -- dist/ | wc -l
-        echo "changed=$?" >> $GITHUB_OUTPUT
+        count=`git status --porcelain=v1 -- dist/ | wc -l`
+        echo "changed=$count" >> $GITHUB_OUTPUT
 
     - name: Commit and Push
       if: steps.check.outputs.changed > 0
