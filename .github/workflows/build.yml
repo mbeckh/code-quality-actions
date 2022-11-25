@@ -55,6 +55,7 @@ jobs:
         # git add dist/
         # git commit -S -m "Compiled source"
         # git push
+        set +e
         sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/index.js)
         if [ $? -eq 0 ]; then
           sha_clause="--field sha=\"$sha\""
@@ -72,6 +73,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       run: |
+        set +e
         echo Step1
         sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/licenses.txt)
         if [ $? -eq 0 ]; then
