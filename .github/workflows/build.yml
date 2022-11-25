@@ -31,18 +31,55 @@ jobs:
     - name: Build dist/index.js
       run: npm run build
     
-    - name: Check if Changed
-      id: check
+    - name: Check dist/index.js
+      id: check_index
       shell: bash
       run: |
-        count=`git status --porcelain=v1 -- dist/ | wc -l`
+        count=`git status --porcelain=v1 -- dist/index.js | wc -l`
         echo "changed=$count" >> $GITHUB_OUTPUT
 
-    - name: Commit and Push
-      if: steps.check.outputs.changed > 0
+    - name: Check dist/licenses.txt
+      id: check_licenses
+      shell: bash
       run: |
-        git config user.name "mbeckh"
-        git config user.email "8502359+mbeckh@users.noreply.github.com"
-        git add dist/
-        git commit -S -m "Compiled source"
-        git push
+        count=`git status --porcelain=v1 -- dist/licenses.txt | wc -l`
+        echo "changed=$count" >> $GITHUB_OUTPUT
+
+    - name: Commit dist/index.js
+      if: steps.check_index.outputs.changed > 0
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      run: |
+        # git config user.name "mbeckh"
+        # git config user.email "8502359+mbeckh@users.noreply.github.com"
+        # git add dist/
+        # git commit -S -m "Compiled source"
+        # git push
+        sha=$(git rev-parse ${{github.head_ref || github.ref_name}}:dist/index.js)
+        if [ $? -eq 0 ]; then
+          sha_clause="--field sha=\"$sha\""
+        fi
+        content=$(base64 -i dist/index.js)
+        gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/index.js \
+          --field message="Update dist/index.js" \
+          --field content="$content" \
+          --field encoding="base64" \
+          --field branch="${{github.head_ref || github.ref_name}}" \
+          $sha_clause
+
+    - name: Commit dist/licenses.txt
+      if: steps.check_licenses.outputs.changed > 0
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      run: |
+        sha=$(git rev-parse ${{github.head_ref || github.ref_name}}:dist/licenses.txt)
+        if [ $? -eq 0 ]; then
+          sha_clause="--field sha=\"$sha\""
+        fi
+        content=$(base64 -i dist/index.js)
+        gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/licenses.txt \
+          --field message="Update dist/licenses.txt" \
+          --field content="$content" \
+          --field encoding="base64" \
+          --field branch="${{github.head_ref || github.ref_name}}" \
+          $sha_clause
