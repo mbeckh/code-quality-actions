@@ -63,8 +63,7 @@ jobs:
         content=$(base64 -i dist/index.js)
         gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/index.js \
           --field message="Update dist/index.js" \
-          --field content="$content" \
-          --field encoding="base64" \
+          --field content=@<(base64 -i dist/index.js) \
           --field branch="${{github.head_ref || github.ref_name}}" \
           $sha_clause
 
@@ -80,7 +79,6 @@ jobs:
         fi
         gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/licenses.txt \
           --field message="Update dist/licenses.txt" \
-          --field content=@dist/index.js
+          --field content=@<(base64 -i dist/licenses.txt) \
           --field branch="${{github.head_ref || github.ref_name}}" \
           $sha_clause
-        echo Step4
