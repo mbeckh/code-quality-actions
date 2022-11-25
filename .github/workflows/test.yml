@@ -57,6 +57,10 @@ jobs:
     needs: build
     name: Get Coverage and Perform Static Analysis
     runs-on: windows-latest
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
     strategy:
       matrix:
         configuration: [ Debug, Release ]
