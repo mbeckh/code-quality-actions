@@ -50,17 +50,12 @@ jobs:
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       run: |
-        # git config user.name "mbeckh"
-        # git config user.email "8502359+mbeckh@users.noreply.github.com"
-        # git add dist/
-        # git commit -S -m "Compiled source"
-        # git push
         set +e
         sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/index.js)
         if [ $? -eq 0 ]; then
           sha_clause="--field sha=\"$sha\""
         fi
-        content=$(base64 -i dist/index.js)
+        set -e
         gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/index.js \
           --field message="Update dist/index.js" \
           --field content=@<(base64 -i dist/index.js) \
@@ -77,6 +72,7 @@ jobs:
         if [ $? -eq 0 ]; then
           sha_clause="--field sha=\"$sha\""
         fi
+        set -e
         gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/licenses.txt \
           --field message="Update dist/licenses.txt" \
           --field content=@<(base64 -i dist/licenses.txt) \
