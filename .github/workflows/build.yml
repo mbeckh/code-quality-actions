@@ -1,15 +1,13 @@
 name: Build
 
 on:
-  push:
-    paths:
-      - '.github/workflows/build.yml'
-      - 'src/**'
-      - 'package*.json'
   workflow_call:
+    outputs:
+      commit:
+        value: ${{jobs.build.outputs.commit}}
 
 concurrency: 
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 
 defaults:
@@ -20,6 +18,8 @@ jobs:
   build:
     name: Build Files in dist/
     runs-on: ubuntu-latest
+    outputs:
+      commit: ${{steps.licenses.outputs.commit || steps.check.outputs.commit}}
 
     steps:
     - name: Checkout
@@ -73,12 +73,3 @@ jobs:
           --field content=@<(base64 -i dist/licenses.txt) \
           --field branch="${{github.head_ref || github.ref_name}}" \
           $sha_clause | jq --raw-output '.commit.sha')" >> $GITHUB_OUTPUT
-
-    - name: Run Tests
-      if: steps.check.outputs.commit || steps.licenses.outputs.commit
-      env:
-        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      run: |
-        gh workflow run Test \
-          --ref ${{github.head_ref || github.ref_name}}
-          --field commit=${{steps.licenses.outputs.commit || steps.check.outputs.commit}}
