@@ -1,4 +1,176 @@
 name: CI
-# check build required, if so, launch build
-# test workflow runs on build complete
-# if build not required, call workflow test directly
+
+on:
+  push:
+    branches: [ master, 'feature**', 'build' ]
+    paths:
+      - '.github/workflows/ci.yml'
+      - 'coverage/**'
+      - 'dist/**'
+      - 'report/**'
+      - 'src/**'
+      - 'test/**'
+      - 'package*.json'
+  pull_request:
+    branches: [ master, 'feature**' ]
+    paths:
+      - '.github/workflows/ci.yml'
+      - 'coverage/**'
+      - 'dist/**'
+      - 'report/**'
+      - 'src/**'
+      - 'test/**'
+      - 'package*.json'
+
+concurrency: 
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+   
+jobs:
+  build:
+    name: Build Files in dist/
+    runs-on: ubuntu-latest
+    outputs:
+      commit: ${{steps.licenses.outputs.commit || steps.check.outputs.commit}}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js v16
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
+    
+    - name: Install Modules
+      run: npm ci
+    
+    - name: Build dist/index.js
+      run: npm run build
+    
+    - name: Check for Changes
+      id: check
+      run: |
+        index=$(git status --porcelain=v1 -- dist/index.js | wc -l)
+        licenses=$(git status --porcelain=v1 -- dist/licenses.txt | wc -l)
+        if [ '${{}}' == 'pull_request' ]; then
+          if [ $index -gt 0 ]; then
+            echo "::error file=dist/index.js::Contents do not match code in src/"
+          fi
+          if [ $licenses -gt 0) ]; then
+            echo "::error file=dist/licenses.txt::Contents do not match code in src/"
+          fi
+          if [ $index -gt 0 -or $licenses -gt 0 ]; then
+            exit 1
+          fi
+        fi
+        echo "index=$index" >> $GITHUB_OUTPUT
+        echo "licenses=$licenses" >> $GITHUB_OUTPUT
+    
+    - name: Commit dist/index.js
+      if: steps.check.outputs.index
+      id: index
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      run: |
+        if sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/index.js); then
+          sha_clause="--field sha=\"$sha\""
+        fi
+        echo "commit=$(gh api --header 'Accept: application/vnd.github+json' \
+          --method PUT /repos/mbeckh/code-quality-actions/contents/dist/index.js \
+          --field message="Update dist/index.js for ${{github.sha}}" \
+          --field content=@<(base64 -i dist/index.js) \
+          --field branch="${{github.head_ref || github.ref_name}}" \
+          $sha_clause | jq --raw-output '.commit.sha')" >> $GITHUB_OUTPUT
+    
+    - name: Commit dist/licenses.txt
+      if: steps.check.outputs.licenses
+      id: licenses
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      run: |
+        if sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/licenses.txt); then
+          sha_clause="--field sha=\"$sha\""
+        fi
+        echo "commit=$(gh api --header 'Accept: application/vnd.github+json' \
+          --method PUT /repos/mbeckh/code-quality-actions/contents/dist/licenses.txt \
+          --field message="Update dist/licenses.txt for ${{github.sha}}" \
+          --field content=@<(base64 -i dist/licenses.txt) \
+          --field branch="${{github.head_ref || github.ref_name}}" \
+          $sha_clause | jq --raw-output '.commit.sha')" >> $GITHUB_OUTPUT
+
+  test:
+    name: Get Coverage and Perform Static Analysis
+    runs-on: windows-latest
+    needs: build
+    strategy:
+      matrix:
+        configuration: [ Debug, Release ]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        ref: ${{needs.build.outputs.commit}}
+
+    - name: Setup MSVC Environment
+      uses:  mbeckh/msvc-dev-cmd@v1
+
+    - name: Configure
+      shell: cmd
+      run: cmake -DCMAKE_BUILD_TYPE=${{matrix.configuration}} -G Ninja -S test -B build
+
+    - name: Build
+      shell: cmd
+      working-directory: build
+      run: cmake --build .
+
+    - name: Coverage
+      if: matrix.configuration == 'Debug'
+      uses: ./coverage
+      with:
+        source-dir: test
+        binary-dir: build
+        codacy-token: ${{secrets.CODACY_PROJECT_API_TOKEN}}
+
+    - name: Codecov
+      if: matrix.configuration == 'Debug'
+      uses: codecov/codecov-action@v3
+      with:
+        files: build/coverage-*.xml
+        fail_ci_if_error: true
+
+    - name: Report
+      uses: ./report
+      with:
+        mode: partial
+        source-dir: test
+        binary-dir: build
+        codacy-token: ${{secrets.CODACY_PROJECT_API_TOKEN}}
+
+    - name: Save Logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{matrix.configuration}}-Logs
+        path: |
+            build/Testing/**/*.log
+            build/clang-tidy-*.log
+  
+  final:
+    name: Send Completion Message
+    runs-on: windows-latest
+    needs: test
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Report
+      uses: ./report
+      with:
+        mode: final
+        codacy-token: ${{secrets.CODACY_PROJECT_API_TOKEN}}
