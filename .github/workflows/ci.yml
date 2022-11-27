@@ -60,7 +60,7 @@ jobs:
           if [ $index -gt 0 ]; then
             echo "::error file=dist/index.js::Contents do not match code in src/"
           fi
-          if [ $licenses -gt 0) ]; then
+          if [ $licenses -gt 0 ]; then
             echo "::error file=dist/licenses.txt::Contents do not match code in src/"
           fi
           if [ $index -gt 0 -or $licenses -gt 0 ]; then
