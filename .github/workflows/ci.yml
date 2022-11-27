@@ -67,11 +67,17 @@ jobs:
             exit 1
           fi
         fi
+        if [ $index -gt 0 ]; then
+          echo "::notice file=dist/index.js::Needs rebuild"
+        fi
+        if [ $licenses -gt 0 ]; then
+          echo "::notice file=dist/licenses.txt::Needs rebuild"
+        fi
         echo "index=$index" >> $GITHUB_OUTPUT
         echo "licenses=$licenses" >> $GITHUB_OUTPUT
     
     - name: Commit dist/index.js
-      if: steps.check.outputs.index
+      if: steps.check.outputs.index > 0
       id: index
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
@@ -87,7 +93,7 @@ jobs:
           $sha_clause | jq --raw-output '.commit.sha')" >> $GITHUB_OUTPUT
     
     - name: Commit dist/licenses.txt
-      if: steps.check.outputs.licenses
+      if: steps.check.outputs.licenses > 0
       id: licenses
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
