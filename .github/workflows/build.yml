@@ -5,26 +5,30 @@ on:
     paths:
       - '.github/workflows/build.yml'
       - 'src/**'
-      - 'package*'
+      - 'package*.json'
   workflow_call:
 
 concurrency: 
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
-    name: Build dist/index.js
+    name: Build Files in dist/
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
       uses: actions/checkout@v3
     
-    - name: Setup Node.js 16.x
+    - name: Setup Node.js v16
       uses: actions/setup-node@v3
       with:
-          node-version: 16.x
+          node-version: 16
     
     - name: Install Modules
       run: npm ci
@@ -32,50 +36,49 @@ jobs:
     - name: Build dist/index.js
       run: npm run build
     
-    - name: Check dist/index.js
-      id: check_index
-      shell: bash
+    - name: Check for Changes
+      id: check
       run: |
-        count=`git status --porcelain=v1 -- dist/index.js | wc -l`
-        echo "changed=$count" >> $GITHUB_OUTPUT
-
-    - name: Check dist/licenses.txt
-      id: check_licenses
-      shell: bash
-      run: |
-        count=`git status --porcelain=v1 -- dist/licenses.txt | wc -l`
-        echo "changed=$count" >> $GITHUB_OUTPUT
+        echo "index=$(git status --porcelain=v1 -- dist/index.js | wc -l)" >> $GITHUB_OUTPUT
+        echo "licenses=$(git status --porcelain=v1 -- dist/licenses.txt | wc -l)" >> $GITHUB_OUTPUT
 
     - name: Commit dist/index.js
-      if: steps.check_index.outputs.changed > 0
+      if: steps.check.outputs.index
+      id: index
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       run: |
-        set +e
-        sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/index.js)
-        if [ $? -eq 0 ]; then
+        if sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/index.js); then
           sha_clause="--field sha=\"$sha\""
         fi
-        set -e
-        gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/index.js \
-          --field message="Update dist/index.js" \
+        echo "commit=$(gh api --header 'Accept: application/vnd.github+json' \
+          --method PUT /repos/mbeckh/code-quality-actions/contents/dist/index.js \
+          --field message="Update dist/index.js for ${{github.sha}}" \
           --field content=@<(base64 -i dist/index.js) \
           --field branch="${{github.head_ref || github.ref_name}}" \
-          $sha_clause
+          $sha_clause | jq --raw-output '.commit.sha')" >> $GITHUB_OUTPUT
 
     - name: Commit dist/licenses.txt
-      if: steps.check_licenses.outputs.changed > 0
+      if: steps.check.outputs.licenses
+      id: licenses
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       run: |
-        set +e
-        sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/licenses.txt)
-        if [ $? -eq 0 ]; then
+        if sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/licenses.txt); then
           sha_clause="--field sha=\"$sha\""
         fi
-        set -e
-        gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/licenses.txt \
-          --field message="Update dist/licenses.txt" \
+        echo "commit=$(gh api --header 'Accept: application/vnd.github+json' \
+          --method PUT /repos/mbeckh/code-quality-actions/contents/dist/licenses.txt \
+          --field message="Update dist/licenses.txt for ${{github.sha}}" \
           --field content=@<(base64 -i dist/licenses.txt) \
           --field branch="${{github.head_ref || github.ref_name}}" \
-          $sha_clause
+          $sha_clause | jq --raw-output '.commit.sha')" >> $GITHUB_OUTPUT
+
+    - name: Run Tests
+      if: steps.check.outputs.commit || steps.licenses.outputs.commit
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      run: |
+        gh workflow run Test \
+          --ref ${{github.head_ref || github.ref_name}}
+          --field commit=${{steps.licenses.outputs.commit || steps.check.outputs.commit}}
