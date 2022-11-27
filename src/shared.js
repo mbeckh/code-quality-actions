@@ -276,6 +276,7 @@ exports.report = async function() {
     }
     core.endGroup();
   } catch (error) {
+    core.warning('xyz');
     core.setFailed(error.message);
   }
 };
