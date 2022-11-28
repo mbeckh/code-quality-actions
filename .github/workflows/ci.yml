@@ -68,10 +68,10 @@ jobs:
           fi
         fi
         if [ $index -gt 0 ]; then
-          echo "::notice file=dist/index.js::dist/index.js needs rebuild"
+          echo "::notice file=dist/index.js::dist/index.js needs update"
         fi
         if [ $licenses -gt 0 ]; then
-          echo "::notice file=dist/licenses.txt::dist/licenses.txt needs rebuild"
+          echo "::notice file=dist/licenses.txt::dist/licenses.txt needs update"
         fi
         echo "index=$index" >> $GITHUB_OUTPUT
         echo "licenses=$licenses" >> $GITHUB_OUTPUT
@@ -91,7 +91,7 @@ jobs:
           --field branch=${{github.head_ref || github.ref_name}} \
           $sha_clause \
           --jq '.commit.sha')
-        echo "::notice file=dist/index.js::Created commit for dist/index.js: $commit"
+        echo "::notice file=dist/index.js::Updated dist/index.js: $commit"
         echo "commit=$commit" >> $GITHUB_OUTPUT
     
     - name: Commit dist/licenses.txt
@@ -109,7 +109,7 @@ jobs:
           --field branch=${{github.head_ref || github.ref_name}} \
           $sha_clause \
           --jq '.commit.sha')
-        echo "::notice file=dist/licenses.txt::Created commit for dist/licenses.txt: $commit"
+        echo "::notice file=dist/licenses.txt::Updated dist/licenses.txt: $commit"
         echo "commit=$commit" >> $GITHUB_OUTPUT
 
   test:
@@ -123,6 +123,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+      with:
+        ref: ${{needs.build.outputs.commit}}
 
     - name: Setup MSVC Environment
       uses:  mbeckh/msvc-dev-cmd@v1
