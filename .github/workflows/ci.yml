@@ -2,7 +2,6 @@ name: CI
 
 on:
   push:
-    branches: [ master, 'feature**', 'build' ]
     paths:
       - '.github/workflows/ci.yml'
       - 'coverage/**'
@@ -114,6 +113,7 @@ jobs:
 
   test:
     name: Get Coverage and Perform Static Analysis
+    if: ${{github.event_name != 'push' || github.ref == 'master' || startsWith(github.ref, 'feature')}}
     runs-on: windows-latest
     needs: build
     strategy:
