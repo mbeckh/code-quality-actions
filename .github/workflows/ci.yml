@@ -31,7 +31,7 @@ jobs:
     name: Build Files in dist/
     runs-on: ubuntu-latest
     outputs:
-      commit: ${{steps.licenses.outputs.commit || steps.check.outputs.commit}}
+      commit: ${{steps.licenses.outputs.commit || steps.index.outputs.commit}}
     defaults:
       run:
         shell: bash
@@ -85,12 +85,14 @@ jobs:
         if sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/index.js); then
           sha_clause="--field sha=\"$sha\""
         fi
-        echo "commit=$(gh api --header 'Accept: application/vnd.github+json' \
-          --method PUT /repos/mbeckh/code-quality-actions/contents/dist/index.js \
+        commit=$(gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/index.js \
           --field message="Update dist/index.js for ${{github.sha}}" \
           --field content=@<(base64 -i dist/index.js) \
           --field branch="${{github.head_ref || github.ref_name}}" \
-          $sha_clause | jq --raw-output '.commit.sha')" >> $GITHUB_OUTPUT
+          $sha_clause \
+          --jq '.commit.sha')
+        echo "::notice file=dist/index.js::Created commit $commit"
+        echo "commit=$commit" >> $GITHUB_OUTPUT
     
     - name: Commit dist/licenses.txt
       if: steps.check.outputs.licenses > 0
@@ -101,12 +103,14 @@ jobs:
         if sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/licenses.txt); then
           sha_clause="--field sha=\"$sha\""
         fi
-        echo "commit=$(gh api --header 'Accept: application/vnd.github+json' \
-          --method PUT /repos/mbeckh/code-quality-actions/contents/dist/licenses.txt \
+        commit=$(gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/licenses.txt \
           --field message="Update dist/licenses.txt for ${{github.sha}}" \
           --field content=@<(base64 -i dist/licenses.txt) \
           --field branch="${{github.head_ref || github.ref_name}}" \
-          $sha_clause | jq --raw-output '.commit.sha')" >> $GITHUB_OUTPUT
+          $sha_clause \
+          --jq '.commit.sha')
+        echo "::notice file=dist/licenses.txt::Created commit $commit"
+        echo "commit=$commit" >> $GITHUB_OUTPUT
 
   test:
     name: Get Coverage and Perform Static Analysis
