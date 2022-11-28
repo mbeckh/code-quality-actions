@@ -58,20 +58,20 @@ jobs:
         licenses=$(git status --porcelain=v1 -- dist/licenses.txt | wc -l)
         if [ '${{github.event_name}}' == 'pull_request' ]; then
           if [ $index -gt 0 ]; then
-            echo "::error file=dist/index.js::Contents do not match code in src/"
+            echo "::error file=dist/index.js::dist/index.js: Contents do not match code in src/"
           fi
           if [ $licenses -gt 0 ]; then
-            echo "::error file=dist/licenses.txt::Contents do not match code in src/"
+            echo "::error file=dist/licenses.txt::dist/licenses.txt: Contents do not match code in src/"
           fi
           if [ $index -gt 0 -or $licenses -gt 0 ]; then
             exit 1
           fi
         fi
         if [ $index -gt 0 ]; then
-          echo "::notice file=dist/index.js::Needs rebuild"
+          echo "::notice file=dist/index.js::dist/index.js needs rebuild"
         fi
         if [ $licenses -gt 0 ]; then
-          echo "::notice file=dist/licenses.txt::Needs rebuild"
+          echo "::notice file=dist/licenses.txt::dist/licenses.txt needs rebuild"
         fi
         echo "index=$index" >> $GITHUB_OUTPUT
         echo "licenses=$licenses" >> $GITHUB_OUTPUT
@@ -83,15 +83,15 @@ jobs:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       run: |
         if sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/index.js); then
-          sha_clause="--field sha=\"$sha\""
+          sha_clause="--field sha=$sha"
         fi
         commit=$(gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/index.js \
           --field message="Update dist/index.js for ${{github.sha}}" \
           --field content=@<(base64 -i dist/index.js) \
-          --field branch="${{github.head_ref || github.ref_name}}" \
+          --field branch=${{github.head_ref || github.ref_name}} \
           $sha_clause \
           --jq '.commit.sha')
-        echo "::notice file=dist/index.js::Created commit $commit"
+        echo "::notice file=dist/index.js::Created commit for dist/index.js: $commit"
         echo "commit=$commit" >> $GITHUB_OUTPUT
     
     - name: Commit dist/licenses.txt
@@ -101,15 +101,15 @@ jobs:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       run: |
         if sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/licenses.txt); then
-          sha_clause="--field sha=\"$sha\""
+          sha_clause="--field sha=$sha"
         fi
         commit=$(gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/licenses.txt \
           --field message="Update dist/licenses.txt for ${{github.sha}}" \
           --field content=@<(base64 -i dist/licenses.txt) \
-          --field branch="${{github.head_ref || github.ref_name}}" \
+          --field branch=${{github.head_ref || github.ref_name}} \
           $sha_clause \
           --jq '.commit.sha')
-        echo "::notice file=dist/licenses.txt::Created commit $commit"
+        echo "::notice file=dist/licenses.txt::Created commit for dist/licenses.txt: $commit"
         echo "commit=$commit" >> $GITHUB_OUTPUT
 
   test:
