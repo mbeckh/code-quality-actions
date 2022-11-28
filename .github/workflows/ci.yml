@@ -113,7 +113,7 @@ jobs:
 
   test:
     name: Get Coverage and Perform Static Analysis
-    if: ${{github.event_name != 'push' || github.ref == 'master' || startsWith(github.ref, 'feature')}}
+    if: ${{github.event_name != 'push' || github.ref_name == 'master' || startsWith(github.ref_name, 'feature')}}
     runs-on: windows-latest
     needs: build
     strategy:
