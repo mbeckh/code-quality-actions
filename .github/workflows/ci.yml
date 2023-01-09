@@ -2,24 +2,9 @@ name: CI
 
 on:
   push:
-    paths:
-      - '.github/workflows/ci.yml'
-      - 'coverage/**'
-      - 'dist/**'
-      - 'report/**'
-      - 'src/**'
-      - 'test/**'
-      - 'package*.json'
   pull_request:
     branches: [ master, 'feature**' ]
-    paths:
-      - '.github/workflows/ci.yml'
-      - 'coverage/**'
-      - 'dist/**'
-      - 'report/**'
-      - 'src/**'
-      - 'test/**'
-      - 'package*.json'
+  workflow_dispatch:
 
 concurrency: 
   group: ${{github.workflow}}-${{github.ref}}
@@ -55,7 +40,7 @@ jobs:
       run: |
         index=$(git status --porcelain=v1 -- dist/index.js | wc -l)
         licenses=$(git status --porcelain=v1 -- dist/licenses.txt | wc -l)
-        if [ '${{github.event_name}}' = 'pull_request' ]; then
+        if [ "$GITHUB_EVENT_NAME" != 'push' ]; then
           if [ $index -gt 0 ]; then
             echo "::error file=dist/index.js::dist/index.js: Contents do not match code in src/"
           fi
@@ -80,14 +65,15 @@ jobs:
       id: index
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        GIT_REF: ${{github.head_ref || github.ref_name}}
       run: |
-        if sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/index.js); then
+        if sha=$(git rev-parse --quiet --verify $GIT_REF:dist/index.js); then
           sha_clause="--field sha=$sha"
         fi
         commit=$(gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/index.js \
-          --field message="Update dist/index.js for ${{github.sha}}" \
+          --field message="Update dist/index.js for $GITHUB_SHA" \
           --field content=@<(base64 -i dist/index.js) \
-          --field branch=${{github.head_ref || github.ref_name}} \
+          --field branch=$GIT_REF \
           $sha_clause \
           --jq '.commit.sha')
         echo "::notice file=dist/index.js::Updated dist/index.js: $commit"
@@ -98,14 +84,15 @@ jobs:
       id: licenses
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        GIT_REF: ${{github.head_ref || github.ref_name}}
       run: |
-        if sha=$(git rev-parse --quiet --verify ${{github.head_ref || github.ref_name}}:dist/licenses.txt); then
+        if sha=$(git rev-parse --quiet --verify $GIT_REF:dist/licenses.txt); then
           sha_clause="--field sha=$sha"
         fi
         commit=$(gh api --method PUT /repos/mbeckh/code-quality-actions/contents/dist/licenses.txt \
-          --field message="Update dist/licenses.txt for ${{github.sha}}" \
+          --field message="Update dist/licenses.txt for $GITHUB_SHA" \
           --field content=@<(base64 -i dist/licenses.txt) \
-          --field branch=${{github.head_ref || github.ref_name}} \
+          --field branch=$GIT_REF \
           $sha_clause \
           --jq '.commit.sha')
         echo "::notice file=dist/licenses.txt::Updated dist/licenses.txt: $commit"
@@ -131,7 +118,7 @@ jobs:
 
     - name: Configure
       shell: cmd
-      run: cmake -DCMAKE_BUILD_TYPE=${{matrix.configuration}} -G Ninja -S test -B build
+      run: cmake -D "CMAKE_BUILD_TYPE:STRING=${{matrix.configuration}}" -G Ninja -S test -B build
 
     - name: Build
       shell: cmd
@@ -169,15 +156,18 @@ jobs:
         path: |
             build/Testing/**/*.log
             build/clang-tidy-*.log
-  
-  final:
+        if-no-files-found: ignore
+
+  completion:
     name: Send Completion Message
-    runs-on: windows-latest
-    needs: test
+    runs-on: ubuntu-latest
+    needs: [ build, test ]
     
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+      with:
+        ref: ${{needs.build.outputs.commit}}
 
     - name: Report
       uses: ./report
