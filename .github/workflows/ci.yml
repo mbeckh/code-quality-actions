@@ -4,6 +4,7 @@ on:
   push:
   pull_request:
     branches: [ master, 'feature**' ]
+  workflow_dispatch:
 
 concurrency: 
   group: ${{github.workflow}}-${{github.ref}}
@@ -39,7 +40,7 @@ jobs:
       run: |
         index=$(git status --porcelain=v1 -- dist/index.js | wc -l)
         licenses=$(git status --porcelain=v1 -- dist/licenses.txt | wc -l)
-        if [ "$GITHUB_EVENT_NAME" = 'pull_request' ]; then
+        if [ "$GITHUB_EVENT_NAME" != 'push' ]; then
           if [ $index -gt 0 ]; then
             echo "::error file=dist/index.js::dist/index.js: Contents do not match code in src/"
           fi
@@ -117,7 +118,7 @@ jobs:
 
     - name: Configure
       shell: cmd
-      run: cmake -DCMAKE_BUILD_TYPE=${{matrix.configuration}} -G Ninja -S test -B build
+      run: cmake -D "CMAKE_BUILD_TYPE:STRING=${{matrix.configuration}}" -G Ninja -S test -B build
 
     - name: Build
       shell: cmd
