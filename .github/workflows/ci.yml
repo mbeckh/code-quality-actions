@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency: 
-  group: ${{github.workflow}}-${{github.ref}}
+  group: ${{github.workflow}}-${{github.event_name}}-${{github.ref}}
   cancel-in-progress: true
 
 jobs:
@@ -40,7 +40,7 @@ jobs:
       run: |
         index=$(git status --porcelain=v1 -- dist/index.js | wc -l)
         licenses=$(git status --porcelain=v1 -- dist/licenses.txt | wc -l)
-        if [ "$GITHUB_EVENT_NAME" != 'push' ]; then
+        if [ "$GITHUB_EVENT_NAME" == 'pull_request' ]; then
           if [ $index -gt 0 ]; then
             echo "::error file=dist/index.js::dist/index.js: Contents do not match code in src/"
           fi
