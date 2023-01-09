@@ -264,6 +264,9 @@ exports.report = async function() {
     const toolPath = sendResults ? await setupCodacyClangTidy() : null;
 
     core.startGroup(`Sending ${mode} code analysis to codacy`);
+    const envCodacy = {
+      'INPUT_CODACY_TOKEN': codacyToken
+    };
     if (sendResults) {
       // All commands run from checkout path. Use relative paths for all files because bash cannot handle drive letter in Windows paths.
       const sourcePath = path.resolve(WORKSPACE_PATH, forceNative(core.getInput('source-dir', { 'required': true })));
@@ -273,9 +276,6 @@ exports.report = async function() {
       const posixBinaryPath = forcePosix(path.relative(checkoutPath, binaryPath));
       const posixToolPath = forcePosix(path.relative(checkoutPath, toolPath));
       const posixLogFile = forcePosix(path.relative(checkoutPath, path.join(TEMP_PATH, 'clang-tidy.json')));
-      const envCodacy = {
-        'INPUT_CODACY_TOKEN': codacyToken
-      };
 
       await exec.exec('bash', [ '-c', `find ${posixBinaryPath} -maxdepth 1 -name 'clang-tidy-*.log' -exec cat {} \\; | java -jar ${posixToolPath} | sed -r -e "s#[\\\\]{2}#/#g" > ${posixLogFile}` ], { 'cwd': checkoutPath });
       await exec.exec('bash', [ '-c', `curl -s -S -XPOST -L -H "project-token: $INPUT_CODACY_TOKEN" -H "Content-type: application/json" -w "\\n" -d @${posixLogFile} "https://api.codacy.com/2.0/gh/$GITHUB_REPOSITORY/commit/$GITHUB_SHA/issuesRemoteResults"` ],
