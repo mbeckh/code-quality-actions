@@ -229,7 +229,12 @@ exports.coverage = async function() {
 
       // codacy script MUST run in temp path because it can download other files to folder .codacy-coverage in the current working directory
       // Codacy requires language argument, else coverage is not detected
-      await exec.exec('bash', [ '-c', `./${forcePosix(path.relative(TEMP_PATH, codacy.script))} report -r '${posixCoverageFile}' -l CPP -t ${codacyToken} --commit-uuid ${env.GITHUB_SHA}` ], { 'cwd': TEMP_PATH });
+      await exec.exec('bash', [ '-c', `./${forcePosix(path.relative(TEMP_PATH, codacy.script))} report -r '$INPUT_COVERAGE_FILE' -l CPP -t '$INPUT_CODACY_TOKEN' --commit-uuid $GITHUB_SHA` ],
+                      { 'cwd': TEMP_PATH,
+                        'env': {
+                          'INPUT_COVERAGE_FILE': posixCoverageFile,
+                          'INPUT_CODACY_TOKEN': codacyToken
+                          }});
 
       if (!codacy.cache.id) {
         await saveCache([ path.join(TEMP_PATH, '.codacy-coverage') ], codacy.cache.key);
@@ -269,10 +274,18 @@ exports.report = async function() {
       const posixLogFile = forcePosix(path.relative(checkoutPath, path.join(TEMP_PATH, 'clang-tidy.json')));
 
       await exec.exec('bash', [ '-c', `find ${posixBinaryPath} -maxdepth 1 -name 'clang-tidy-*.log' -exec cat {} \\; | java -jar ${posixToolPath} | sed -r -e "s#[\\\\]{2}#/#g" > ${posixLogFile}` ], { 'cwd': checkoutPath });
-      await exec.exec('bash', [ '-c', `curl -s -S -XPOST -L -H "project-token: ${codacyToken}" -H "Content-type: application/json" -w "\\n" -d @${posixLogFile} "https://api.codacy.com/2.0/gh/${env.GITHUB_REPOSITORY}/commit/${env.GITHUB_SHA}/issuesRemoteResults"` ], { 'cwd': checkoutPath });
+      await exec.exec('bash', [ '-c', `curl -s -S -XPOST -L -H "project-token: $INPUT_CODACY_TOKEN" -H "Content-type: application/json" -w "\\n" -d @${posixLogFile} "https://api.codacy.com/2.0/gh/$GITHUB_REPOSITORY/commit/$GITHUB_SHA/issuesRemoteResults"` ],
+                      { 'cwd': checkoutPath,
+                        'env': {
+                          'INPUT_CODACY_TOKEN': codacyToken
+                        }});
     }
     if (sendCommit) {
-      await exec.exec('bash', [ '-c', `curl -s -S -XPOST -L -H "project-token: ${codacyToken}" -H "Content-type: application/json" -w "\\n" "https://api.codacy.com/2.0/gh/${env.GITHUB_REPOSITORY}/commit/${env.GITHUB_SHA}/resultsFinal"` ], { 'cwd': WORKSPACE_PATH });
+      await exec.exec('bash', [ '-c', `curl -s -S -XPOST -L -H "project-token: $INPUT_CODACY_TOKEN" -H "Content-type: application/json" -w "\\n" "https://api.codacy.com/2.0/gh/$GITHUB_REPOSITORY/commit/$GITHUB_SHA/resultsFinal"` ],
+                      { 'cwd': WORKSPACE_PATH,
+                        'env': {
+                          'INPUT_CODACY_TOKEN': codacyToken
+                        }});
     }
     core.endGroup();
   } catch (error) {
