@@ -283,7 +283,7 @@ exports.report = async function() {
                         'env': { ...env, ...envCodacy }});
     }
     if (sendCommit) {
-      await exec.exec('bash', [ '-c', `curl -s -S -XPOST -L -H "project-token: $INPUT_CODACY_TOKEN" -H "Content-type: application/json" -w "\\n" "https://api.codacy.com/2.0/gh/$GITHUB_REPOSITORY/commit/$GITHUB_SHA/resultsFinal"` ],
+      await exec.exec('bash', [ '-c', 'curl -s -S -XPOST -L -H "project-token: $INPUT_CODACY_TOKEN" -H "Content-type: application/json" -w "\\n" "https://api.codacy.com/2.0/gh/$GITHUB_REPOSITORY/commit/$GITHUB_SHA/resultsFinal"' ],
                       { 'cwd': WORKSPACE_PATH,
                         'env': { ...env, ...envCodacy }});
     }
