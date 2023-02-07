@@ -137,9 +137,15 @@ async function setupCodacyClangTidy() {
 
 async function setupCodacyCoverageScript() {
   core.startGroup('Loading codacy coverage reporter');
+
+  const githubToken = core.getInput('github-token', { 'required': true });
+  core.setSecret(githubToken);
+
+  const octokit = github.getOctokit(githubToken);
   const { data: release } = await octokit.rest.repos.getLatestRelease({ 'owner':'codacy', 'repo': 'codacy-coverage-reporter' });
   const cacheKey = `codacy-coverage-${release.tag_name}`;
   const script = path.join(TEMP_PATH, '.codacy-coverage.sh');
+
   const cacheId = await restoreCache([ script, path.join(TEMP_PATH, '.codacy-coverage') ], cacheKey, [ 'codacy-coverage-' ]);
   if (cacheId) {
     core.info('.codacy-coverage is found in cache');
