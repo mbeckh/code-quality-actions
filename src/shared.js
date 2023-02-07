@@ -137,17 +137,14 @@ async function setupCodacyClangTidy() {
 
 async function setupCodacyCoverageScript() {
   core.startGroup('Loading codacy coverage reporter');
+  const { data: release } = await octokit.rest.repos.getLatestRelease({ 'owner':'codacy', 'repo': 'codacy-coverage-reporter' });
+  const cacheKey = `codacy-coverage-${release.tag_name}`;
   const script = path.join(TEMP_PATH, '.codacy-coverage.sh');
-  await exec.exec('curl', ['-s', '-S', '-L', `-o${script}`, 'https://coverage.codacy.com/get.sh' ]);
-  const file = fs.readFileSync(script);
-  const hash = crypto.createHash('sha256');
-  hash.update(file);
-  const hex = hash.digest('hex');
-
-  const cacheKey = `codacy-coverage-${hex}`;
-  const cacheId = await restoreCache([ path.join(TEMP_PATH, '.codacy-coverage') ], cacheKey, [ 'codacy-coverage-' ]);
+  const cacheId = await restoreCache([ script, path.join(TEMP_PATH, '.codacy-coverage') ], cacheKey, [ 'codacy-coverage-' ]);
   if (cacheId) {
     core.info('.codacy-coverage is found in cache');
+  } else {
+    await exec.exec('curl', ['-s', '-S', '-L', `-o${script}`, 'https://coverage.codacy.com/get.sh' ]);
   }
   core.endGroup();
 
@@ -238,7 +235,7 @@ exports.coverage = async function() {
                         'env': { ...env, ...envCodacy }});
 
       if (!codacy.cache.id) {
-        await saveCache([ path.join(TEMP_PATH, '.codacy-coverage') ], codacy.cache.key);
+        await saveCache([ codacy.script, path.join(TEMP_PATH, '.codacy-coverage') ], codacy.cache.key);
         core.info('Added .codacy-coverage to cache');
       }
       core.endGroup();
