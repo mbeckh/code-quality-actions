@@ -86,7 +86,7 @@ async function setupOpenCppCoverage() {
       core.info(`Downloading ${release.name} from ${asset.browser_download_url}`);
 
       const downloadFile = path.join(TEMP_PATH, asset.name);
-      await exec.exec('curl', [ '-s', '-S', '-L', `-o${downloadFile}`, '--create-dirs', asset.browser_download_url ]);
+      await exec.exec('curl', [ '-s', '-S', '-L', '-o', downloadFile, '--create-dirs', asset.browser_download_url ]);
       core.info('Unpacking innoextract');
       await exec.exec('7z', [ 'x', '-aos', `-o${TEMP_PATH}`, downloadFile, 'innoextract.exe' ]);
     }
@@ -94,7 +94,7 @@ async function setupOpenCppCoverage() {
     core.info(`Downloading ${release.name} from ${asset.browser_download_url}`);
 
     const downloadFile = path.join(TEMP_PATH, asset.name);
-    await exec.exec('curl', [ '-s', '-S', '-L', `-o${downloadFile}`, '--create-dirs', asset.browser_download_url ]);
+    await exec.exec('curl', [ '-s', '-S', '-L', '-o', downloadFile, '--create-dirs', asset.browser_download_url ]);
     core.info('Unpacking OpenCppCoverage');
     await exec.exec(path.join(TEMP_PATH, 'innoextract'), [ '-e', '-m', '--output-dir', toolPath, downloadFile ]);
 
@@ -127,7 +127,7 @@ async function setupCodacyClangTidy() {
   } else {
     core.info(`Downloading codacy-clang-tidy ${release.tag_name} from ${asset.browser_download_url}`);
 
-    await exec.exec('curl', [ '-s', '-S', '-L', `-o${toolFile}`, '--create-dirs', asset.browser_download_url ]);
+    await exec.exec('curl', [ '-s', '-S', '-L', '-o', toolFile, '--create-dirs', asset.browser_download_url ]);
     await saveCache([ toolPath ], key);
     core.info(`Downloaded codacy-clang-tidy ${release.tag_name} at ${toolPath}`);
   }
@@ -156,7 +156,7 @@ async function setupCodacyCoverageScript() {
   } else {
     core.info(`Downloading codacy-coverage-reporter ${release.tag_name} from ${asset.browser_download_url}`);
 
-    await exec.exec('curl', [ '-s', '-S', '-L', `-o${toolFile}`, '--create-dirs', asset.browser_download_url ]);
+    await exec.exec('curl', [ '-s', '-S', '-L', '-o', toolFile, '--create-dirs', asset.browser_download_url ]);
     await saveCache([ toolPath ], key);
     core.info(`Downloaded codacy-coverage-reporter ${release.tag_name} at ${toolPath}`);
   }
@@ -243,7 +243,7 @@ exports.coverage = async function() {
       };
 
       // Codacy requires language argument, else coverage is not detected
-      await exec.exec('bash', [ '-c', `java -jar ${posixToolPath} report -r '$INPUT_COVERAGE_FILE' -l CPP -t '$INPUT_CODACY_TOKEN' --commit-uuid $GITHUB_SHA` ],
+      await exec.exec('bash', [ '-c', `java -jar "${posixToolPath}" report -r "$INPUT_COVERAGE_FILE" -l CPP -t "$INPUT_CODACY_TOKEN" --commit-uuid "$GITHUB_SHA"` ],
                       { 'cwd': WORKSPACE_PATH,
                         'env': { ...env, ...envCodacy }});
       core.endGroup();
@@ -282,13 +282,13 @@ exports.report = async function() {
       const posixToolPath = forcePosix(path.relative(checkoutPath, toolPath));
       const posixLogFile = forcePosix(path.relative(checkoutPath, path.join(TEMP_PATH, 'clang-tidy.json')));
 
-      await exec.exec('bash', [ '-c', `find ${posixBinaryPath} -maxdepth 1 -name 'clang-tidy-*.log' -exec cat {} \\; | java -jar ${posixToolPath} | sed -r -e "s#[\\\\]{2}#/#g" > ${posixLogFile}` ], { 'cwd': checkoutPath });
-      await exec.exec('bash', [ '-c', `curl -s -S -XPOST -L -H "project-token: $INPUT_CODACY_TOKEN" -H "Content-type: application/json" -w "\\n" -d @${posixLogFile} "https://api.codacy.com/2.0/gh/$GITHUB_REPOSITORY/commit/$GITHUB_SHA/issuesRemoteResults"` ],
+      await exec.exec('bash', [ '-c', `find "${posixBinaryPath}" -maxdepth 1 -name 'clang-tidy-*.log' -exec cat "{}" \\; | java -jar "${posixToolPath}" | sed -r -e "s#[\\\\]{2}#/#g" > "${posixLogFile}"` ], { 'cwd': checkoutPath });
+      await exec.exec('bash', [ '-c', `curl -s -S -X POST -L -H "project-token: $INPUT_CODACY_TOKEN" -H "Content-type: application/json" -w "\\n" -d "@${posixLogFile}" "https://api.codacy.com/2.0/gh/$GITHUB_REPOSITORY/commit/$GITHUB_SHA/issuesRemoteResults"` ],
                       { 'cwd': checkoutPath,
                         'env': { ...env, ...envCodacy }});
     }
     if (sendCommit) {
-      await exec.exec('bash', [ '-c', 'curl -s -S -XPOST -L -H "project-token: $INPUT_CODACY_TOKEN" -H "Content-type: application/json" -w "\\n" "https://api.codacy.com/2.0/gh/$GITHUB_REPOSITORY/commit/$GITHUB_SHA/resultsFinal"' ],
+      await exec.exec('bash', [ '-c', 'curl -s -S -X POST -L -H "project-token: $INPUT_CODACY_TOKEN" -H "Content-type: application/json" -w "\\n" "https://api.codacy.com/2.0/gh/$GITHUB_REPOSITORY/commit/$GITHUB_SHA/resultsFinal"' ],
                       { 'cwd': WORKSPACE_PATH,
                         'env': { ...env, ...envCodacy }});
     }
