@@ -143,10 +143,10 @@ async function setupCodacyCoverageScript() {
 
   const octokit = github.getOctokit(githubToken);
   const { data: release } = await octokit.rest.repos.getLatestRelease({ 'owner':'codacy', 'repo': 'codacy-coverage-reporter' });
-  const cacheKey = `codacy-coverage-${release.tag_name}`;
+  const key = `codacy-coverage-${release.name}`;
   const script = path.join(TEMP_PATH, '.codacy-coverage.sh');
 
-  const cacheId = await restoreCache([ script, path.join(TEMP_PATH, '.codacy-coverage') ], cacheKey, [ 'codacy-coverage-' ]);
+  const cacheId = await restoreCache([ script, path.join(TEMP_PATH, '.codacy-coverage') ], key);
   if (cacheId) {
     core.info('.codacy-coverage is found in cache');
   } else {
@@ -154,7 +154,7 @@ async function setupCodacyCoverageScript() {
   }
   core.endGroup();
 
-  return { 'cache': { 'id': cacheId, 'key': cacheKey }, 'script': script };
+  return { 'cache': { 'id': cacheId, 'key': key }, 'script': script };
 }
 
 function parseCommandLine(str) {
