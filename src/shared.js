@@ -86,7 +86,7 @@ async function setupOpenCppCoverage() {
       core.info(`Downloading ${release.name} from ${asset.browser_download_url}`);
 
       const downloadFile = path.join(TEMP_PATH, asset.name);
-      await exec.exec('curl', [ '-s', '-S', '-L', `-o${downloadFile}`, '--create-dirs', asset.browser_download_url ]);
+      await exec.exec('curl', [ '-s', '-S', '-L', '-o', downloadFile, '--create-dirs', asset.browser_download_url ]);
       core.info('Unpacking innoextract');
       await exec.exec('7z', [ 'x', '-aos', `-o${TEMP_PATH}`, downloadFile, 'innoextract.exe' ]);
     }
@@ -94,7 +94,7 @@ async function setupOpenCppCoverage() {
     core.info(`Downloading ${release.name} from ${asset.browser_download_url}`);
 
     const downloadFile = path.join(TEMP_PATH, asset.name);
-    await exec.exec('curl', [ '-s', '-S', '-L', `-o${downloadFile}`, '--create-dirs', asset.browser_download_url ]);
+    await exec.exec('curl', [ '-s', '-S', '-L', '-o', downloadFile, '--create-dirs', asset.browser_download_url ]);
     core.info('Unpacking OpenCppCoverage');
     await exec.exec(path.join(TEMP_PATH, 'innoextract'), [ '-e', '-m', '--output-dir', toolPath, downloadFile ]);
 
@@ -127,7 +127,7 @@ async function setupCodacyClangTidy() {
   } else {
     core.info(`Downloading codacy-clang-tidy ${release.tag_name} from ${asset.browser_download_url}`);
 
-    await exec.exec('curl', [ '-s', '-S', '-L', `-o${toolFile}`, '--create-dirs', asset.browser_download_url ]);
+    await exec.exec('curl', [ '-s', '-S', '-L', '-o', toolFile, '--create-dirs', asset.browser_download_url ]);
     await saveCache([ toolPath ], key);
     core.info(`Downloaded codacy-clang-tidy ${release.tag_name} at ${toolPath}`);
   }
@@ -136,22 +136,32 @@ async function setupCodacyClangTidy() {
 }
 
 async function setupCodacyCoverageScript() {
-  core.startGroup('Loading codacy coverage reporter');
-  const script = path.join(TEMP_PATH, '.codacy-coverage.sh');
-  await exec.exec('curl', ['-s', '-S', '-L', `-o${script}`, 'https://coverage.codacy.com/get.sh' ]);
-  const file = fs.readFileSync(script);
-  const hash = crypto.createHash('sha256');
-  hash.update(file);
-  const hex = hash.digest('hex');
+  const toolPath = path.join(TEMP_PATH, 'codacy-coverage-reporter');
 
-  const cacheKey = `codacy-coverage-${hex}`;
-  const cacheId = await restoreCache([ path.join(TEMP_PATH, '.codacy-coverage') ], cacheKey, [ 'codacy-coverage-' ]);
-  if (cacheId) {
-    core.info('.codacy-coverage is found in cache');
+  core.startGroup('Installing codacy-coverage-reporter');
+  core.info('Getting latest release for codacy-coverage-reporter');
+
+  const githubToken = core.getInput('github-token', { 'required': true });
+  core.setSecret(githubToken);
+
+  const octokit = github.getOctokit(githubToken);
+  const { data: release } = await octokit.rest.repos.getLatestRelease({ 'owner':'codacy', 'repo': 'codacy-coverage-reporter' });
+  const asset = release.assets.filter((e) => /\.jar$/.test(e.name))[0];
+
+  const key = `codacy-coverage-reporter-${asset.id}`;
+  const toolFile = path.join(toolPath, asset.name);
+
+  if (await restoreCache([ toolPath ], key)) {
+    core.info(`Found codacy-coverage-reporter ${release.tag_name} in cache at ${toolPath}`);
+  } else {
+    core.info(`Downloading codacy-coverage-reporter ${release.tag_name} from ${asset.browser_download_url}`);
+
+    await exec.exec('curl', [ '-s', '-S', '-L', '-o', toolFile, '--create-dirs', asset.browser_download_url ]);
+    await saveCache([ toolPath ], key);
+    core.info(`Downloaded codacy-coverage-reporter ${release.tag_name} at ${toolPath}`);
   }
   core.endGroup();
-
-  return { 'cache': { 'id': cacheId, 'key': cacheKey }, 'script': script };
+  return toolFile;
 }
 
 function parseCommandLine(str) {
@@ -191,7 +201,7 @@ exports.coverage = async function() {
     core.setSecret(codacyToken);
 
     const checkoutPath = getCheckoutPath(sourcePath);
-    const codacy = codacyToken ? await setupCodacyCoverageScript() : null;
+    const codacyToolPath = codacyToken ? await setupCodacyCoverageScript() : null;
 
     core.startGroup(`Getting code coverage for ${command}`);
 
@@ -222,25 +232,20 @@ exports.coverage = async function() {
 
     core.endGroup();
 
-    if (codacy) {
+    if (codacyToolPath) {
       core.startGroup('Sending coverage to codacy');
       // use relative posix paths for bash
-      const posixCoverageFile = forcePosix(path.relative(TEMP_PATH, coverageFile));
+      const posixToolPath = forcePosix(path.relative(WORKSPACE_PATH, codacyToolPath));
+      const posixCoverageFile = forcePosix(path.relative(WORKSPACE_PATH, coverageFile));
       const envCodacy = {
         'INPUT_COVERAGE_FILE': posixCoverageFile,
         'INPUT_CODACY_TOKEN': codacyToken
       };
 
-      // codacy script MUST run in temp path because it can download other files to folder .codacy-coverage in the current working directory
       // Codacy requires language argument, else coverage is not detected
-      await exec.exec('bash', [ '-c', `./${forcePosix(path.relative(TEMP_PATH, codacy.script))} report -r '$INPUT_COVERAGE_FILE' -l CPP -t '$INPUT_CODACY_TOKEN' --commit-uuid $GITHUB_SHA` ],
-                      { 'cwd': TEMP_PATH,
+      await exec.exec('bash', [ '-c', `java -jar "${posixToolPath}" report -r "$INPUT_COVERAGE_FILE" -l CPP -t "$INPUT_CODACY_TOKEN" --commit-uuid "$GITHUB_SHA"` ],
+                      { 'cwd': WORKSPACE_PATH,
                         'env': { ...env, ...envCodacy }});
-
-      if (!codacy.cache.id) {
-        await saveCache([ path.join(TEMP_PATH, '.codacy-coverage') ], codacy.cache.key);
-        core.info('Added .codacy-coverage to cache');
-      }
       core.endGroup();
     }
   } catch (error) {
@@ -277,13 +282,13 @@ exports.report = async function() {
       const posixToolPath = forcePosix(path.relative(checkoutPath, toolPath));
       const posixLogFile = forcePosix(path.relative(checkoutPath, path.join(TEMP_PATH, 'clang-tidy.json')));
 
-      await exec.exec('bash', [ '-c', `find ${posixBinaryPath} -maxdepth 1 -name 'clang-tidy-*.log' -exec cat {} \\; | java -jar ${posixToolPath} | sed -r -e "s#[\\\\]{2}#/#g" > ${posixLogFile}` ], { 'cwd': checkoutPath });
-      await exec.exec('bash', [ '-c', `curl -s -S -XPOST -L -H "project-token: $INPUT_CODACY_TOKEN" -H "Content-type: application/json" -w "\\n" -d @${posixLogFile} "https://api.codacy.com/2.0/gh/$GITHUB_REPOSITORY/commit/$GITHUB_SHA/issuesRemoteResults"` ],
+      await exec.exec('bash', [ '-c', `find "${posixBinaryPath}" -maxdepth 1 -name 'clang-tidy-*.log' -exec cat "{}" \\; | java -jar "${posixToolPath}" | sed -r -e "s#[\\\\]{2}#/#g" > "${posixLogFile}"` ], { 'cwd': checkoutPath });
+      await exec.exec('bash', [ '-c', `curl -s -S -X POST -L -H "project-token: $INPUT_CODACY_TOKEN" -H "Content-type: application/json" -w "\\n" -d "@${posixLogFile}" "https://api.codacy.com/2.0/gh/$GITHUB_REPOSITORY/commit/$GITHUB_SHA/issuesRemoteResults"` ],
                       { 'cwd': checkoutPath,
                         'env': { ...env, ...envCodacy }});
     }
     if (sendCommit) {
-      await exec.exec('bash', [ '-c', 'curl -s -S -XPOST -L -H "project-token: $INPUT_CODACY_TOKEN" -H "Content-type: application/json" -w "\\n" "https://api.codacy.com/2.0/gh/$GITHUB_REPOSITORY/commit/$GITHUB_SHA/resultsFinal"' ],
+      await exec.exec('bash', [ '-c', 'curl -s -S -X POST -L -H "project-token: $INPUT_CODACY_TOKEN" -H "Content-type: application/json" -w "\\n" "https://api.codacy.com/2.0/gh/$GITHUB_REPOSITORY/commit/$GITHUB_SHA/resultsFinal"' ],
                       { 'cwd': WORKSPACE_PATH,
                         'env': { ...env, ...envCodacy }});
     }
