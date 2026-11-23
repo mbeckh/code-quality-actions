@@ -150,7 +150,7 @@ jobs:
 
     - name: Save Logs
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v7
       with:
         name: ${{matrix.configuration}}-Logs
         path: |
