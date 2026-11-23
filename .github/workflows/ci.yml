@@ -135,7 +135,7 @@ jobs:
 
     - name: Codecov
       if: matrix.configuration == 'Debug'
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v7
       with:
         directory: build
         fail_ci_if_error: true
